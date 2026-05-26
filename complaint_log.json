@@ -1,0 +1,15 @@
+{
+  "sent_escalations": [],
+  "replied": false,
+  "reply_date": null,
+  "auto_acknowledged": true,
+  "acknowledged_date": "2026-05-26",
+  "acknowledged_by": "enquiry@tlb.gov.hk",
+  "progress_checks": [
+    {
+      "date": "2026-05-26",
+      "gov_emails_found": 1,
+      "note": "定期查核，找到 1 封相關政府郵件"
+    }
+  ]
+}

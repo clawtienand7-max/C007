@@ -1,0 +1,20 @@
+{
+  "_comment": "Copy this file to email_config.json and fill in your details",
+  "_gmail_note": "For Gmail: use a 16-character App Password (not your login password)",
+  "_gmail_setup": "Go to myaccount.google.com → Security → 2-Step Verification → App passwords",
+
+  "user": "your.email@gmail.com",
+  "password": "xxxx xxxx xxxx xxxx",
+
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "imap_host": "imap.gmail.com",
+  "imap_port": 993,
+
+  "_providers": {
+    "gmail":   { "smtp": "smtp.gmail.com",        "smtp_port": 587, "imap": "imap.gmail.com",            "imap_port": 993 },
+    "outlook": { "smtp": "smtp.office365.com",    "smtp_port": 587, "imap": "outlook.office365.com",     "imap_port": 993 },
+    "yahoo":   { "smtp": "smtp.mail.yahoo.com",   "smtp_port": 587, "imap": "imap.mail.yahoo.com",       "imap_port": 993 },
+    "icloud":  { "smtp": "smtp.mail.me.com",      "smtp_port": 587, "imap": "imap.mail.me.com",          "imap_port": 993 }
+  }
+}

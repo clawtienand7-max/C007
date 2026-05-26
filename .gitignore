@@ -1,1 +1,4 @@
 __pycache__/
+email_config.json
+.env
+*.env

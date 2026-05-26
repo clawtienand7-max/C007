@@ -20,6 +20,8 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import httplib2
+import google_auth_httplib2
 
 BASE_DIR    = Path(__file__).parent
 TOKEN_FILE  = BASE_DIR / "gmail_token.json"
@@ -71,7 +73,10 @@ def get_service():
             creds = flow.credentials
         TOKEN_FILE.write_text(creds.to_json())
         os.chmod(TOKEN_FILE, 0o600)
-    return build("gmail", "v1", credentials=creds)
+    # Cloud sandbox uses a self-signed TLS proxy; disable cert verification
+    http = httplib2.Http(disable_ssl_certificate_validation=True)
+    authed_http = google_auth_httplib2.AuthorizedHttp(creds, http=http)
+    return build("gmail", "v1", http=authed_http)
 
 
 def get_my_email(service) -> str:

@@ -42,17 +42,31 @@ def get_service():
                 sys.exit(1)
             flow = InstalledAppFlow.from_client_secrets_file(
                 str(CREDS_FILE), SCOPES,
-                redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+                redirect_uri="http://localhost"
             )
-            auth_url, _ = flow.authorization_url(prompt="consent")
+            auth_url, _ = flow.authorization_url(
+                prompt="consent",
+                access_type="offline"
+            )
             print("\n" + "═"*60)
             print("請在瀏覽器打開以下網址：")
             print()
             print(auth_url)
             print()
-            print("登入後，複製網頁顯示的授權碼，貼到下方：")
+            print("登入並點擊「允許」後，瀏覽器會跳到 http://localhost (連線失敗屬正常)")
+            print("請複製瀏覽器網址列的完整網址（包含 ?code=...），貼到下方：")
             print("═"*60)
-            code = input("授權碼: ").strip()
+            redirect_response = input("完整網址: ").strip()
+            # Accept either full URL or just the code
+            if redirect_response.startswith("http"):
+                from urllib.parse import urlparse, parse_qs
+                parsed = urlparse(redirect_response)
+                code = parse_qs(parsed.query).get("code", [None])[0]
+                if not code:
+                    print("❌ 找不到授權碼，請確認網址包含 ?code=")
+                    sys.exit(1)
+            else:
+                code = redirect_response
             flow.fetch_token(code=code)
             creds = flow.credentials
         TOKEN_FILE.write_text(creds.to_json())

@@ -11,5 +11,36 @@
       "gov_emails_found": 1,
       "note": "定期查核，找到 1 封相關政府郵件"
     }
-  ]
+  ],
+  "motorcycle_parking": {
+    "sent_escalations": [],
+    "replied": false,
+    "reply_date": null,
+    "auto_acknowledged": true,
+    "acknowledged_date": "2026-05-26"
+  },
+  "bus_service_cuts": {
+    "sent_escalations": [],
+    "replied": false,
+    "reply_date": null,
+    "auto_acknowledged": false,
+    "acknowledged_date": null,
+    "initial_sent_date": "2026-05-26"
+  },
+  "pedestrian_facilities": {
+    "sent_escalations": [],
+    "replied": false,
+    "reply_date": null,
+    "auto_acknowledged": false,
+    "acknowledged_date": null,
+    "initial_sent_date": "2026-05-26"
+  },
+  "parking_fine_fairness": {
+    "sent_escalations": [],
+    "replied": false,
+    "reply_date": null,
+    "auto_acknowledged": false,
+    "acknowledged_date": null,
+    "initial_sent_date": "2026-05-26"
+  }
 }

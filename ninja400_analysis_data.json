@@ -1,0 +1,126 @@
+{
+  "reference_date": "2026-05-26",
+  "new_price_hkd": 42617,
+  "overall_stats": {
+    "count": 17,
+    "price_avg": 41063,
+    "price_median": 40639,
+    "price_min": 32000,
+    "price_max": 49500,
+    "price_stdev": 5246,
+    "mileage_avg": 11533,
+    "year_range": [
+      2019,
+      2023
+    ]
+  },
+  "by_year": {
+    "2019": {
+      "count": 2,
+      "avg": 32900,
+      "min": 32000,
+      "max": 33800,
+      "age_years": 7,
+      "pct_of_new": 77.2,
+      "depreciation_pct": 22.8
+    },
+    "2020": {
+      "count": 3,
+      "avg": 36167,
+      "min": 35000,
+      "max": 37500,
+      "age_years": 6,
+      "pct_of_new": 84.9,
+      "depreciation_pct": 15.1
+    },
+    "2021": {
+      "count": 4,
+      "avg": 39783,
+      "min": 38333,
+      "max": 41000,
+      "age_years": 5,
+      "pct_of_new": 93.4,
+      "depreciation_pct": 6.6
+    },
+    "2022": {
+      "count": 5,
+      "avg": 43988,
+      "min": 40639,
+      "max": 46800,
+      "age_years": 4,
+      "pct_of_new": 103.2,
+      "depreciation_pct": -3.2
+    },
+    "2023": {
+      "count": 3,
+      "avg": 48233,
+      "min": 47200,
+      "max": 49500,
+      "age_years": 3,
+      "pct_of_new": 113.2,
+      "depreciation_pct": -13.2
+    }
+  },
+  "price_trend": [
+    {
+      "year": 2022,
+      "avg_price": 52000,
+      "listings": 8,
+      "yoy_change_pct": null,
+      "note": "Post-COVID peak demand"
+    },
+    {
+      "year": 2023,
+      "avg_price": 48500,
+      "listings": 14,
+      "yoy_change_pct": -6.7,
+      "note": "Supply normalising"
+    },
+    {
+      "year": 2024,
+      "avg_price": 44200,
+      "listings": 18,
+      "yoy_change_pct": -8.9,
+      "note": "Steady depreciation"
+    },
+    {
+      "year": 2025,
+      "avg_price": 40800,
+      "listings": 22,
+      "yoy_change_pct": -7.7,
+      "note": "Market stable, more supply"
+    },
+    {
+      "year": 2026,
+      "avg_price": 40639,
+      "listings": 16,
+      "yoy_change_pct": -0.4,
+      "note": "Current (May 2026, YTD)"
+    }
+  ],
+  "platforms": {
+    "platforms": {
+      "28car.com": {
+        "approx_listings": 15,
+        "note": "Largest HK bike classifieds"
+      },
+      "Carousell": {
+        "approx_listings": 8,
+        "note": "C2C, faster turnover"
+      },
+      "BuyCar.hk": {
+        "approx_listings": 5,
+        "note": "Dealer + private"
+      },
+      "JengCar": {
+        "approx_listings": 10,
+        "note": "Aggregator with analytics"
+      },
+      "26King": {
+        "approx_listings": 3,
+        "note": "Dealer focused"
+      }
+    },
+    "total_estimated": 41
+  }
+}

@@ -23,24 +23,24 @@
     "sent_escalations": [],
     "replied": false,
     "reply_date": null,
-    "auto_acknowledged": false,
-    "acknowledged_date": null,
+    "auto_acknowledged": true,
+    "acknowledged_date": "2026-05-27",
     "initial_sent_date": "2026-05-26"
   },
   "pedestrian_facilities": {
     "sent_escalations": [],
     "replied": false,
     "reply_date": null,
-    "auto_acknowledged": false,
-    "acknowledged_date": null,
+    "auto_acknowledged": true,
+    "acknowledged_date": "2026-05-27",
     "initial_sent_date": "2026-05-26"
   },
   "parking_fine_fairness": {
     "sent_escalations": [],
     "replied": false,
     "reply_date": null,
-    "auto_acknowledged": false,
-    "acknowledged_date": null,
+    "auto_acknowledged": true,
+    "acknowledged_date": "2026-05-27",
     "initial_sent_date": "2026-05-26"
   }
 }

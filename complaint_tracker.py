@@ -48,7 +48,7 @@ COMPLAINTS = {
         "title": "電單車泊位嚴重不足、罰款標準失當及罰款收入透明度不足",
         "sent_date": "2026-05-26",
         "primary_dept": "運輸及物流局",
-        "attach_evidence": True,
+        "attach_evidence": False,
         "escalation_levels": [
             {"to": "enquiry@tlb.gov.hk", "cc": ["td@td.gov.hk"],
              "label": "追催 + 運輸署", "days_wait": 28},

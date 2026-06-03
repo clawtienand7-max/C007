@@ -19,3 +19,6 @@ backups/
 *.mo
 *.pot
 pending_auth.json
+skills/.whoosh_index/
+logs/
+memory/

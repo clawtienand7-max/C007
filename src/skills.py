@@ -57,9 +57,10 @@ class Skill:
             f"",
             f"## 結果摘要",
             f"",
-            self.result_summary,
+            str(self.result_summary) if not isinstance(self.result_summary, str) else self.result_summary,
         ]
-        return "\n".join(lines)
+        # Guard: ensure all items in lines are str before joining
+        return "\n".join(str(l) for l in lines)
 
     @classmethod
     def from_markdown(cls, content: str, file_path: Optional[str] = None) -> "Skill":

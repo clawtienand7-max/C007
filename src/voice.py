@@ -250,7 +250,10 @@ class VoiceManager:
     # ── Status ────────────────────────────────────────────────────────────────
 
     def get_status(self) -> dict:
+        mode = "always" if self._always_on else ("ptt" if self._ptt_active else "off")
         return {
+            "voice_mode": mode,          # frontend alias: off / ptt / always
+            "wake_word": list(WAKE_WORDS)[0] if WAKE_WORDS else "嘿 TFNK",
             "whisper_loaded": self._whisper_model is not None,
             "whisper_model": WHISPER_MODEL,
             "tts_voice": TTS_VOICE,

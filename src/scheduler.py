@@ -149,7 +149,7 @@ class TaskScheduler:
     def add_task(
         self,
         name: str,
-        callback_name: str,
+        callback_name: str = "run_agent_task",
         task_type: str = TASK_TYPE_ONCE,
         priority: int = PRIORITY_NORMAL,
         interval_seconds: Optional[int] = None,

@@ -413,6 +413,7 @@ async def list_models() -> JSONResponse:
     return JSONResponse({
         "models": models,
         "current": current,
+        "active_model": current.get("id", ""),  # frontend alias
         "mode": settings.agent_mode,
     })
 
@@ -446,9 +447,12 @@ async def get_stats() -> JSONResponse:
 
 @app.get("/api/connections")
 async def get_connections() -> JSONResponse:
-    """Return all connection statuses."""
+    """Return all connection statuses as list (frontend expects {connections: [...]})."""
     monitor = get_connection_monitor()
-    return JSONResponse(monitor.get_all())
+    raw = monitor.get_all()
+    # raw is {name: dict} — convert to [{name, ...}, ...]
+    connections = [{"name": k, **v} for k, v in raw.items()]
+    return JSONResponse({"connections": connections})
 
 
 @app.post("/api/connections/check")
@@ -456,7 +460,8 @@ async def force_check_connections() -> JSONResponse:
     """Force immediate re-check of all connections."""
     monitor = get_connection_monitor()
     result = await monitor.check_all()
-    return JSONResponse(result)
+    connections = [{"name": k, **v} for k, v in result.items()]
+    return JSONResponse({"connections": connections})
 
 
 @app.delete("/api/connections/{name}")
@@ -472,13 +477,44 @@ async def remove_connection(name: str) -> JSONResponse:
 
 @app.get("/api/tasks")
 async def list_tasks() -> JSONResponse:
-    """List all agent tasks and scheduler queue."""
+    """List all tasks. Frontend expects {tasks: [{id, label, status, progress, ...}]}."""
     agent = get_agent_runtime()
     scheduler = get_scheduler()
+
+    def _norm_agent_task(t: dict) -> dict:
+        return {
+            "id":                 t.get("task_id") or t.get("id", ""),
+            "label":              t.get("label") or t.get("description", "")[:60],
+            "status":             t.get("status", "PENDING"),
+            "progress":           t.get("progress", 0),
+            "started_at":         t.get("started_at"),
+            "estimated_remaining":t.get("estimated_remaining"),
+            "current_step":       t.get("current_step"),
+            "requires_auth":      t.get("requires_auth", False),
+            "estimated_total":    t.get("estimated_total", 60),
+        }
+
+    def _norm_sched_task(t: dict) -> dict:
+        return {
+            "id":                 t.get("task_id", ""),
+            "label":              t.get("name", ""),
+            "status":             {"running": "RUNNING", "paused": "PAUSED",
+                                   "pending": "PENDING", "completed": "COMPLETED",
+                                   "failed": "FAILED"}.get(t.get("state", "pending"), "PENDING"),
+            "progress":           t.get("progress", 0),
+            "started_at":         t.get("last_run"),
+            "estimated_remaining":None,
+            "current_step":       None,
+            "requires_auth":      False,
+            "estimated_total":    t.get("estimated_duration_seconds", 60),
+        }
+
+    agent_tasks = [_norm_agent_task(t) for t in (agent.list_tasks() or [])]
+    sched_tasks = [_norm_sched_task(t) for t in (scheduler.list_tasks() or [])]
+    all_tasks = agent_tasks + sched_tasks
+
     return JSONResponse({
-        "agent_tasks": agent.list_tasks(),
-        "scheduled_tasks": scheduler.list_tasks(),
-        "queue": scheduler.get_queue(),
+        "tasks": all_tasks,
         "gantt": scheduler.get_gantt_data(),
     })
 
@@ -603,13 +639,15 @@ async def get_intel_models() -> JSONResponse:
 @app.get("/api/intel/news")
 async def get_intel_news() -> JSONResponse:
     intel = get_intel_manager()
-    return JSONResponse({"news": intel.get_ai_news()})
+    news = intel.get_ai_news()
+    return JSONResponse({"items": news, "news": news, "last_updated": intel.last_updated})
 
 
 @app.get("/api/intel/free-models")
 async def get_free_models() -> JSONResponse:
     intel = get_intel_manager()
-    return JSONResponse({"free_models": intel.get_free_models()})
+    free = intel.get_free_models()
+    return JSONResponse({"models": free, "free_models": free, "last_updated": intel.last_updated})
 
 
 @app.get("/api/intel/agents")
@@ -621,7 +659,8 @@ async def get_agent_comparison() -> JSONResponse:
 @app.get("/api/intel/tools")
 async def get_popular_tools() -> JSONResponse:
     intel = get_intel_manager()
-    return JSONResponse({"tools": intel.get_popular_tools()})
+    tools = intel.get_popular_tools()
+    return JSONResponse({"categories": tools, "tools": tools})
 
 
 @app.post("/api/intel/refresh")
@@ -641,7 +680,10 @@ async def get_config() -> JSONResponse:
     """Return non-sensitive configuration."""
     settings = get_settings()
     return JSONResponse({
+        "mode": settings.agent_mode,          # frontend alias
         "agent_mode": settings.agent_mode,
+        "tts_voice": getattr(settings, "tts_voice", "zh-HK-HiuMaanNeural"),
+        "wake_word": getattr(settings, "wake_word", "嘿 TFNK"),
         "tool_policies": settings.tool_policies,
         "lock_list": settings.lock_list_parsed,
         "ollama_base_url": settings.ollama_base_url,
@@ -839,7 +881,8 @@ async def get_graph() -> JSONResponse:
 
     return JSONResponse({
         "nodes": nodes,
-        "edges": edges,
+        "links": edges,   # D3.js convention used by graph.js panel
+        "edges": edges,   # keep for backwards compat
         "meta": {
             "task_count": len(agent.list_tasks()),
             "skill_count": len(all_skills),

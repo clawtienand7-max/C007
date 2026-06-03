@@ -384,7 +384,10 @@ class IntelManager:
         self._settings = get_settings()
         self._cache_file = self._settings.get_memory_dir() / "intel_cache.json"
         self._cache: Dict[str, Any] = {}
+        self.last_updated: float = 0.0
         self._load_cache()
+        import time
+        self.last_updated = self._cache.get("updated_at", time.time())
 
     # ── Cache management ──────────────────────────────────────────────────────
 

@@ -81,7 +81,7 @@ fn start_sidecar(app: AppHandle, state: SharedSidecar) {
 
                     // Auto-restart unless the app is shutting down
                     tokio::time::sleep(Duration::from_secs(3)).await;
-                    println!("[TFNK] attempting sidecar restart…");
+                    println!("[TFNK] attempting sidecar restart...");
                     start_sidecar(app_clone.clone(), state_clone.clone());
                     return;
                 }
@@ -106,7 +106,7 @@ fn stop_sidecar(state: &SharedSidecar) {
 fn build_tray() -> SystemTray {
     let show_hide = CustomMenuItem::new("show_hide".to_string(), "Show / Hide");
     let emergency = CustomMenuItem::new("emergency_stop".to_string(), "Emergency Stop");
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit TFNK™");
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit TFNK\u{2122}");
 
     let menu = SystemTrayMenu::new()
         .add_item(show_hide)
@@ -264,7 +264,7 @@ fn main() {
             // ── Global shortcuts ──────────────────────────────────────────────
             let mut shortcuts = app_handle.global_shortcut_manager();
 
-            // Ctrl+Shift+T → toggle window
+            // Ctrl+Shift+T -> toggle window
             let toggle_handle = app_handle.clone();
             shortcuts
                 .register("Ctrl+Shift+T", move || {
@@ -272,7 +272,7 @@ fn main() {
                 })
                 .unwrap_or_else(|e| eprintln!("[TFNK] shortcut register error: {e}"));
 
-            // Ctrl+Shift+S → emergency stop
+            // Ctrl+Shift+S -> emergency stop
             let stop_handle = app_handle.clone();
             let stop_sidecar_ref = Arc::clone(&sidecar_clone);
             shortcuts

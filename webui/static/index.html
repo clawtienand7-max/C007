@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+  <meta name="description" content="TFNK™ Autonomous Agent Desktop" />
+  <title>TFNK™ — 自主智能代理系統</title>
+
+  <!-- Rajdhani from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- 站酷高端黑 via jsDelivr (zcool-gdh) -->
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-tc@5/index.css" rel="stylesheet" />
+
+  <!-- D3.js for force graph -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <!-- Marked.js for markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+
+  <!-- Highlight.js for code -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/highlight.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* ===== CRITICAL INLINE CSS ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-ui: 'Rajdhani', 'Noto Sans TC', sans-serif;
+      --font-zh: 'Noto Sans TC', 'Rajdhani', sans-serif;
+      --primary: #00D4FF;
+      --bg: #0A0E1A;
+      --accent: #1A2744;
+      --glow: rgba(0,212,255,0.3);
+      --glow-strong: rgba(0,212,255,0.6);
+      --panel-bg: rgba(10,14,26,0.92);
+      --panel-border: rgba(0,212,255,0.25);
+      --text-primary: #E0F4FF;
+      --text-secondary: rgba(224,244,255,0.6);
+      --text-dim: rgba(224,244,255,0.35);
+      --danger: #FF3355;
+      --warning: #FFB800;
+      --success: #00FF88;
+      --header-h: 48px;
+      --voice-bar-h: 36px;
+      --grid-gap: 6px;
+      --radius: 4px;
+      --radius-lg: 8px;
+      --transition-fast: 150ms ease;
+      --transition-med: 300ms ease;
+      --transition-slow: 600ms ease;
+      --scanline-color: rgba(0,212,255,0.15);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      line-height: 1.4;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== SPLASH SCREEN ===== */
+    #splash {
+      position: fixed; inset: 0;
+      z-index: 9999;
+      background: #000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      overflow: hidden;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    #splash.fade-out { opacity: 0; pointer-events: none; }
+    #splash-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+    }
+    #splash-content {
+      position: relative; z-index: 2;
+      text-align: center;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 24px;
+    }
+    #splash-logo {
+      font-family: var(--font-ui);
+      font-size: 96px; font-weight: 700;
+      letter-spacing: 12px;
+      color: #00D4FF;
+      text-shadow: 0 0 40px rgba(0,212,255,0.8), 0 0 80px rgba(0,212,255,0.4);
+      opacity: 0;
+      transform: scale(1.5);
+      transition: opacity 0.6s ease, transform 0.6s ease, font-size 0.6s ease;
+    }
+    #splash-logo.visible { opacity: 1; transform: scale(1); }
+    #splash-status {
+      font-family: var(--font-zh);
+      font-size: 16px; letter-spacing: 4px;
+      color: rgba(0,212,255,0.8);
+      min-height: 24px;
+    }
+    #splash-bar-wrap {
+      width: 320px; height: 3px;
+      background: rgba(0,212,255,0.15);
+      border-radius: 2px; overflow: hidden;
+    }
+    #splash-bar {
+      height: 100%; width: 0%;
+      background: #00D4FF;
+      box-shadow: 0 0 12px rgba(0,212,255,0.8);
+      border-radius: 2px;
+      transition: width 0.1s linear;
+    }
+    #splash-version {
+      font-size: 11px; letter-spacing: 3px;
+      color: rgba(0,212,255,0.4);
+    }
+
+    /* ===== MAIN APP SHELL ===== */
+    #app {
+      display: none;
+      position: fixed; inset: 0;
+      display: grid;
+      grid-template-rows: var(--header-h) 1fr var(--voice-bar-h);
+      grid-template-columns: 1fr;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* ===== MATRIX BACKGROUND ===== */
+    #matrix-canvas {
+      position: fixed; inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===== SCAN-LINE OVERLAY ===== */
+    #scanline-overlay {
+      position: fixed; inset: 0; z-index: 1;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+    }
+    #mode-sweep {
+      position: fixed; inset: 0; z-index: 500;
+      pointer-events: none;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0;
+    }
+    #mode-sweep.sweeping {
+      animation: modeSweep 0.5s ease forwards;
+    }
+    @keyframes modeSweep {
+      0% { transform: translateX(-100%); opacity: 0.6; }
+      50% { transform: translateX(0%); opacity: 0.8; }
+      100% { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* ===== EMERGENCY STOP OVERLAY ===== */
+    #emergency-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(255,0,40,0.15);
+      border: 3px solid #FF3355;
+      backdrop-filter: blur(4px);
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 24px;
+    }
+    #emergency-overlay.active { display: flex; }
+    #emergency-overlay .e-title {
+      font-size: 64px; font-weight: 700; letter-spacing: 8px;
+      color: #FF3355;
+      text-shadow: 0 0 30px rgba(255,51,85,0.8);
+      animation: glitch 0.3s infinite;
+    }
+    #emergency-overlay .e-sub {
+      font-family: var(--font-zh);
+      font-size: 20px; letter-spacing: 4px;
+      color: rgba(255,51,85,0.8);
+    }
+    #emergency-resume {
+      padding: 12px 32px; border: 2px solid #FF3355;
+      background: transparent; color: #FF3355;
+      font-family: var(--font-ui); font-size: 16px; font-weight: 600;
+      letter-spacing: 3px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    #emergency-resume:hover { background: rgba(255,51,85,0.2); }
+
+    /* ===== HEADER BAR ===== */
+    #header {
+      position: relative; z-index: 100;
+      grid-row: 1;
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 12px;
+      background: rgba(5,8,20,0.95);
+      border-bottom: 1px solid var(--panel-border);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    }
+    #header-logo {
+      font-size: 20px; font-weight: 700;
+      letter-spacing: 3px; color: var(--primary);
+      text-shadow: 0 0 16px var(--glow-strong);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    #header-logo span { font-size: 10px; vertical-align: super; }
+
+    #mode-chips {
+      display: flex; gap: 6px; align-items: center;
+      position: absolute; left: 50%; transform: translateX(-50%);
+    }
+    .mode-chip {
+      padding: 4px 14px; border-radius: 2px;
+      font-size: 11px; font-weight: 600; letter-spacing: 2px;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all 0.2s; white-space: nowrap;
+      font-family: var(--font-zh);
+    }
+    .mode-chip[data-mode="basic"] {
+      border-color: rgba(0,212,255,0.4); color: rgba(0,212,255,0.6);
+    }
+    .mode-chip[data-mode="thinking"] {
+      border-color: rgba(255,107,53,0.4); color: rgba(255,107,53,0.6);
+    }
+    .mode-chip[data-mode="collaborative"] {
+      border-color: rgba(0,255,136,0.4); color: rgba(0,255,136,0.6);
+    }
+    .mode-chip.active[data-mode="basic"] {
+      background: rgba(0,212,255,0.15); border-color: #00D4FF;
+      color: #00D4FF; box-shadow: 0 0 12px rgba(0,212,255,0.4);
+    }
+    .mode-chip.active[data-mode="thinking"] {
+      background: rgba(255,107,53,0.15); border-color: #FF6B35;
+      color: #FF6B35; box-shadow: 0 0 12px rgba(255,107,53,0.4);
+    }
+    .mode-chip.active[data-mode="collaborative"] {
+      background: rgba(0,255,136,0.15); border-color: #00FF88;
+      color: #00FF88; box-shadow: 0 0 12px rgba(0,255,136,0.4);
+    }
+
+    #header-right {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sys-stat {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 2px; cursor: default;
+    }
+    .sys-stat-label {
+      font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+    }
+    .sys-stat-bar-wrap {
+      width: 48px; height: 4px;
+      background: rgba(255,255,255,0.08); border-radius: 2px;
+    }
+    .sys-stat-bar {
+      height: 100%; border-radius: 2px;
+      background: var(--primary);
+      box-shadow: 0 0 6px var(--glow);
+      transition: width 0.5s ease;
+    }
+    .sys-stat-val {
+      font-size: 10px; font-weight: 600; color: var(--primary);
+    }
+
+    #panel-toggles {
+      display: flex; gap: 4px;
+    }
+    .panel-toggle-btn {
+      padding: 3px 8px; border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: var(--text-dim);
+      font-family: var(--font-ui); font-size: 10px;
+      letter-spacing: 1px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .panel-toggle-btn:hover, .panel-toggle-btn.active {
+      border-color: var(--primary); color: var(--primary);
+      background: rgba(0,212,255,0.08);
+    }
+
+    #emergency-stop-btn {
+      width: 32px; height: 32px;
+      border-radius: 3px; border: 2px solid #FF3355;
+      background: rgba(255,51,85,0.1);
+      color: #FF3355; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      animation: emergencyPulse 2s infinite;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    #emergency-stop-btn:hover {
+      background: rgba(255,51,85,0.3);
+      box-shadow: 0 0 20px rgba(255,51,85,0.5);
+    }
+    @keyframes emergencyPulse {
+      0%, 100% { box-shadow: 0 0 6px rgba(255,51,85,0.3); }
+      50% { box-shadow: 0 0 16px rgba(255,51,85,0.7); }
+    }
+
+    /* ===== WORKSPACE ===== */
+    #workspace {
+      position: relative; z-index: 10;
+      grid-row: 2;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      grid-template-rows: 1fr 1fr;
+      gap: var(--grid-gap);
+      padding: var(--grid-gap);
+    }
+
+    /* ===== PANELS ===== */
+    .panel {
+      position: relative;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: border-color 0.3s, box-shadow 0.3s;
+      min-width: 200px; min-height: 120px;
+    }
+    .panel:hover { border-color: rgba(0,212,255,0.45); }
+    .panel.floating {
+      position: fixed; z-index: 200;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.7), 0 0 0 1px var(--panel-border),
+                  0 0 32px var(--glow);
+    }
+    .panel.minimized { height: 36px !important; overflow: hidden; }
+    .panel.hidden { display: none !important; }
+
+    .panel-header {
+      display: flex; align-items: center;
+      padding: 0 10px; height: 34px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.3);
+      cursor: default; gap: 8px;
+    }
+    .panel-header.draggable { cursor: move; }
+    .panel-icon { font-size: 12px; opacity: 0.7; }
+    .panel-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 2px;
+      color: var(--text-secondary); text-transform: uppercase;
+      flex: 1;
+      font-family: var(--font-zh);
+    }
+    .panel-mode-badge {
+      padding: 2px 6px; border-radius: 2px;
+      font-size: 9px; letter-spacing: 1px; font-weight: 600;
+      background: var(--accent); color: var(--primary);
+      border: 1px solid var(--panel-border);
+    }
+    .panel-controls { display: flex; gap: 4px; }
+    .panel-btn {
+      width: 20px; height: 20px; border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: var(--text-dim);
+      font-size: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .panel-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .panel-btn.close:hover { border-color: var(--danger); color: var(--danger); }
+    .panel-body {
+      flex: 1; overflow: hidden; position: relative;
+      display: flex; flex-direction: column;
+    }
+    .panel-body-scroll { overflow-y: auto; flex: 1; padding: 10px; }
+
+    /* Panel grid positions */
+    #panel-chat { grid-column: 1; grid-row: 1 / 3; }
+    #panel-models { grid-column: 2; grid-row: 1; }
+    #panel-tasks { grid-column: 3; grid-row: 1 / 3; }
+    #panel-intel { grid-column: 2; grid-row: 2; }
+
+    /* ===== CHAT PANEL ===== */
+    #chat-messages {
+      flex: 1; overflow-y: auto; padding: 10px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .msg {
+      display: flex; gap: 8px; max-width: 90%;
+    }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.agent { align-self: flex-start; }
+    .msg-bubble {
+      padding: 8px 12px; border-radius: var(--radius-lg);
+      font-size: 12px; line-height: 1.6;
+      max-width: 100%; word-break: break-word;
+    }
+    .msg.user .msg-bubble {
+      background: var(--accent);
+      border: 1px solid var(--panel-border);
+      color: var(--text-primary);
+    }
+    .msg.agent .msg-bubble {
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.2);
+      color: var(--text-primary);
+    }
+    .msg-avatar {
+      width: 28px; height: 28px; border-radius: 3px;
+      background: var(--accent); border: 1px solid var(--panel-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; flex-shrink: 0;
+      color: var(--primary);
+    }
+    .msg-time {
+      font-size: 9px; color: var(--text-dim);
+      margin-top: 3px;
+    }
+    .msg.user .msg-time { text-align: right; }
+    .typing-indicator {
+      display: flex; gap: 4px; align-items: center;
+      padding: 10px 12px;
+    }
+    .typing-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--primary);
+      animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 100% { opacity: 0.3; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-4px); }
+    }
+
+    #emoji-display {
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      gap: 10px;
+    }
+    #emoji-canvas { border-radius: 3px; }
+    #emoji-state-label {
+      font-size: 10px; letter-spacing: 2px; color: var(--text-dim);
+      font-family: var(--font-zh);
+    }
+
+    #chat-input-area {
+      padding: 8px; border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    #chat-input {
+      width: 100%; background: rgba(0,0,0,0.4);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius); padding: 8px 10px;
+      color: var(--text-primary); font-family: var(--font-ui);
+      font-size: 12px; resize: none; outline: none;
+      transition: border-color 0.2s;
+      min-height: 56px;
+    }
+    #chat-input:focus { border-color: var(--primary); }
+    #chat-input-buttons { display: flex; gap: 6px; }
+    .chat-btn {
+      flex: 1; padding: 6px; border-radius: var(--radius);
+      border: 1px solid var(--panel-border);
+      background: transparent; color: var(--primary);
+      font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+      letter-spacing: 1px; cursor: pointer;
+      transition: all 0.2s; display: flex; align-items: center;
+      justify-content: center; gap: 4px;
+    }
+    .chat-btn:hover {
+      background: rgba(0,212,255,0.1);
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--glow);
+    }
+    .chat-btn.voice-btn { flex: 0 0 42px; }
+    .chat-btn.voice-btn.active {
+      background: rgba(255,51,85,0.2); border-color: var(--danger);
+      color: var(--danger); animation: voicePulse 0.8s infinite;
+    }
+    @keyframes voicePulse {
+      0%, 100% { box-shadow: 0 0 6px rgba(255,51,85,0.3); }
+      50% { box-shadow: 0 0 16px rgba(255,51,85,0.7); }
+    }
+
+    /* ===== MODEL STATUS PANEL ===== */
+    #model-current {
+      padding: 14px 14px 8px;
+      text-align: center;
+    }
+    #model-current-name {
+      font-size: 18px; font-weight: 700; letter-spacing: 2px;
+      color: var(--primary);
+      text-shadow: 0 0 20px var(--glow-strong);
+    }
+    #model-current-sub {
+      font-size: 10px; color: var(--text-dim); letter-spacing: 2px;
+    }
+    .model-switcher {
+      margin: 0 10px 10px;
+      background: rgba(0,0,0,0.4); border: 1px solid var(--panel-border);
+      border-radius: var(--radius); padding: 5px 8px;
+      color: var(--text-primary); font-family: var(--font-ui);
+      font-size: 11px; width: calc(100% - 20px); outline: none; cursor: pointer;
+    }
+    .model-stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 6px; padding: 8px 10px;
+    }
+    .stat-block {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius); padding: 8px;
+    }
+    .stat-block-label {
+      font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+      text-transform: uppercase; margin-bottom: 4px;
+    }
+    .stat-block-val {
+      font-size: 20px; font-weight: 700; color: var(--primary);
+      line-height: 1;
+    }
+    .stat-block-unit { font-size: 10px; color: var(--text-secondary); }
+
+    /* Token speed gauge */
+    #tokens-gauge-wrap {
+      padding: 8px 14px;
+    }
+    .gauge-label {
+      font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .gauge-track {
+      height: 8px; background: rgba(255,255,255,0.06);
+      border-radius: 4px; overflow: hidden; position: relative;
+    }
+    .gauge-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--primary), #fff);
+      box-shadow: 0 0 10px var(--glow);
+      transition: width 0.4s ease;
+    }
+    .gauge-ticks {
+      display: flex; justify-content: space-between;
+      margin-top: 3px;
+    }
+    .gauge-tick { font-size: 9px; color: var(--text-dim); }
+
+    /* Context bar */
+    #context-bar-wrap {
+      padding: 4px 14px 10px;
+    }
+
+    /* Thinking depth */
+    #thinking-depth {
+      display: flex; gap: 3px; padding: 4px 14px 10px;
+      align-items: center;
+    }
+    .depth-label { font-size: 9px; color: var(--text-dim); letter-spacing: 2px; margin-right: 6px; }
+    .depth-block {
+      width: 10px; height: 10px; border-radius: 1px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: transparent; transition: all 0.3s;
+    }
+    .depth-block.active { background: var(--primary); box-shadow: 0 0 6px var(--glow); border-color: var(--primary); }
+
+    /* ===== TASK PANEL ===== */
+    .task-tabs {
+      display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+    .task-tab {
+      flex: 1; padding: 8px 4px; text-align: center;
+      font-size: 10px; letter-spacing: 1px; color: var(--text-dim);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.2s; font-family: var(--font-zh);
+    }
+    .task-tab.active {
+      color: var(--primary); border-bottom-color: var(--primary);
+    }
+    #gantt-wrap { padding: 8px; flex: 1; overflow-y: auto; }
+    .gantt-row {
+      display: grid; grid-template-columns: 90px 1fr 50px 60px 24px;
+      gap: 4px; align-items: center; margin-bottom: 5px;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .gantt-label { font-size: 10px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gantt-bar-track { height: 10px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+    .gantt-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+    .gantt-eta { font-size: 9px; color: var(--text-dim); text-align: right; }
+    .status-badge {
+      padding: 2px 5px; border-radius: 2px;
+      font-size: 8px; letter-spacing: 1px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-badge.running { background: rgba(0,212,255,0.15); color: #00D4FF; }
+    .status-badge.queued { background: rgba(255,184,0,0.15); color: #FFB800; }
+    .status-badge.done { background: rgba(0,255,136,0.15); color: #00FF88; }
+    .status-badge.error { background: rgba(255,51,85,0.15); color: #FF3355; }
+    .gantt-stop { width: 20px; height: 20px; border-radius: 2px;
+      border: 1px solid rgba(255,51,85,0.4); background: transparent;
+      color: var(--danger); font-size: 9px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; }
+    .gantt-stop:hover { background: rgba(255,51,85,0.2); }
+    #add-task-btn {
+      margin: 6px 8px; padding: 7px; border-radius: var(--radius);
+      border: 1px dashed rgba(0,212,255,0.3); background: transparent;
+      color: var(--primary); font-family: var(--font-ui); font-size: 11px;
+      cursor: pointer; width: calc(100% - 16px); letter-spacing: 2px;
+      transition: all 0.2s;
+    }
+    #add-task-btn:hover { background: rgba(0,212,255,0.08); border-style: solid; }
+
+    /* ===== SETTINGS PANEL ===== */
+    .settings-section {
+      padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .settings-section-title {
+      font-size: 9px; letter-spacing: 3px; color: var(--text-dim);
+      text-transform: uppercase; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px; font-family: var(--font-zh);
+    }
+    .settings-section-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* Chip toggles */
+    .chip-toggle {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px; cursor: pointer;
+    }
+    .chip-socket {
+      width: 36px; height: 18px; border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.4);
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .chip-socket.on { border-color: var(--primary); }
+    .chip-insert {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, var(--primary), rgba(0,212,255,0.6));
+      transform: translateX(-100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 4px 0 12px var(--glow);
+    }
+    .chip-socket.on .chip-insert { transform: translateX(0); }
+    .chip-socket .chip-pins {
+      position: absolute; right: 3px; top: 50%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .chip-pin {
+      width: 3px; height: 3px; background: rgba(255,255,255,0.2);
+      border-radius: 1px;
+    }
+    .chip-socket.on .chip-pin { background: rgba(0,0,0,0.5); }
+    .chip-label { font-size: 11px; color: var(--text-secondary); flex: 1; font-family: var(--font-zh); }
+    .chip-status { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); font-family: var(--font-zh); }
+
+    /* Mode rotary */
+    #mode-rotary-wrap {
+      display: flex; align-items: center; justify-content: center;
+      gap: 20px; padding: 10px;
+    }
+    .rotary-svg { cursor: pointer; }
+    .mode-rotary-label { font-size: 10px; color: var(--text-secondary); font-family: var(--font-zh); }
+
+    /* Port inputs */
+    .port-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 6px;
+    }
+    .port-indicator {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+      flex-shrink: 0; transition: all 0.3s;
+    }
+    .port-indicator.connected { background: #00FF88; box-shadow: 0 0 8px rgba(0,255,136,0.6); border-color: #00FF88; }
+    .port-input {
+      flex: 1; background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius); padding: 5px 8px;
+      color: var(--text-primary); font-family: 'Courier New', monospace;
+      font-size: 10px; outline: none; letter-spacing: 1px;
+    }
+    .port-input:focus { border-color: var(--primary); }
+    .port-save-btn {
+      padding: 5px 10px; border-radius: var(--radius);
+      border: 1px solid var(--panel-border); background: transparent;
+      color: var(--primary); font-family: var(--font-ui); font-size: 10px;
+      cursor: pointer; transition: all 0.2s; letter-spacing: 1px;
+    }
+    .port-save-btn:hover { background: rgba(0,212,255,0.1); }
+    .pull-plug-btn {
+      padding: 5px; border-radius: var(--radius);
+      border: 1px solid rgba(255,51,85,0.3); background: transparent;
+      color: var(--danger); font-size: 11px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pull-plug-btn:hover { background: rgba(255,51,85,0.1); }
+
+    /* ===== CONNECTIONS PANEL ===== */
+    .conn-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 10px;
+    }
+    .conn-table th {
+      text-align: left; padding: 5px 8px;
+      color: var(--text-dim); letter-spacing: 2px; font-size: 9px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-transform: uppercase;
+    }
+    .conn-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .conn-table tr:hover td { background: rgba(0,212,255,0.04); }
+    .conn-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      display: inline-block; margin-right: 4px;
+    }
+    .conn-dot.green { background: #00FF88; box-shadow: 0 0 6px rgba(0,255,136,0.7); }
+    .conn-dot.red { background: #FF3355; box-shadow: 0 0 6px rgba(255,51,85,0.7); }
+    .conn-dot.yellow { background: #FFB800; box-shadow: 0 0 6px rgba(255,184,0,0.7); }
+    .conn-delete-btn {
+      padding: 2px 6px; border-radius: 2px;
+      border: 1px solid rgba(255,51,85,0.3); background: transparent;
+      color: var(--danger); font-size: 9px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .conn-delete-btn:hover { background: rgba(255,51,85,0.15); }
+    .conn-refresh-btn {
+      margin: 8px; padding: 6px 14px; border-radius: var(--radius);
+      border: 1px solid var(--panel-border); background: transparent;
+      color: var(--primary); font-family: var(--font-ui); font-size: 10px;
+      cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
+    }
+    .conn-refresh-btn:hover { background: rgba(0,212,255,0.08); }
+    .usage-badge {
+      padding: 2px 6px; border-radius: 10px;
+      font-size: 9px; background: var(--accent);
+      color: var(--text-secondary);
+    }
+
+    /* ===== INTEL PANEL ===== */
+    .intel-tabs {
+      display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+    .intel-tab {
+      flex: 1; padding: 7px 4px; text-align: center;
+      font-size: 10px; letter-spacing: 1px; color: var(--text-dim);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.2s; font-family: var(--font-zh);
+    }
+    .intel-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .intel-pane { display: none; flex: 1; overflow-y: auto; padding: 8px; }
+    .intel-pane.active { display: block; }
+
+    /* Model comparison */
+    .model-cmp-row { margin-bottom: 8px; }
+    .model-cmp-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; display: flex; justify-content: space-between; }
+    .model-cmp-bar-wrap { height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 2px; }
+    .model-cmp-bar { height: 100%; border-radius: 3px; background: var(--primary); box-shadow: 0 0 6px var(--glow); }
+    .model-cmp-meta { font-size: 9px; color: var(--text-dim); display: flex; gap: 8px; }
+
+    /* News feed */
+    .news-item { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .news-title { font-size: 11px; color: var(--text-primary); margin-bottom: 3px; line-height: 1.4; font-family: var(--font-zh); }
+    .news-meta { font-size: 9px; color: var(--text-dim); display: flex; gap: 8px; }
+    .news-source { color: var(--primary); }
+
+    /* Free model cards */
+    .free-models-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .free-model-card {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius); padding: 8px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .free-model-card:hover { border-color: var(--primary); background: rgba(0,212,255,0.05); }
+    .free-model-name { font-size: 11px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .free-model-provider { font-size: 9px; color: var(--primary); }
+    .free-model-ctx { font-size: 9px; color: var(--text-dim); }
+
+    /* Agents tab */
+    .agent-matrix { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .agent-matrix th { text-align: left; padding: 5px 8px; color: var(--text-dim); border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 9px; letter-spacing: 1px; }
+    .agent-matrix td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .capability-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block;
+    }
+    .capability-dot.yes { background: #00FF88; box-shadow: 0 0 4px rgba(0,255,136,0.6); }
+    .capability-dot.no { background: rgba(255,255,255,0.12); }
+    .capability-dot.partial { background: #FFB800; box-shadow: 0 0 4px rgba(255,184,0,0.6); }
+
+    /* ===== GRAPH PANEL ===== */
+    #graph-canvas-wrap {
+      flex: 1; position: relative; overflow: hidden;
+    }
+    #graph-svg {
+      width: 100%; height: 100%;
+    }
+    .graph-controls {
+      position: absolute; top: 8px; right: 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .graph-ctrl-btn {
+      padding: 4px 8px; border-radius: 2px;
+      border: 1px solid var(--panel-border); background: var(--panel-bg);
+      color: var(--text-secondary); font-family: var(--font-ui);
+      font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
+    }
+    .graph-ctrl-btn:hover, .graph-ctrl-btn.active { border-color: var(--primary); color: var(--primary); }
+
+    /* ===== VOICE BAR ===== */
+    #voice-bar {
+      position: relative; z-index: 100;
+      grid-row: 3;
+      display: flex; align-items: center;
+      padding: 0 14px; gap: 12px;
+      background: rgba(5,8,20,0.95);
+      border-top: 1px solid var(--panel-border);
+    }
+    #voice-mic-icon {
+      font-size: 14px; color: var(--text-dim);
+      transition: color 0.2s;
+    }
+    #voice-mic-icon.active { color: var(--danger); animation: voicePulse 0.8s infinite; }
+    #voice-waveform { flex: 1; height: 20px; }
+    #voice-mode-label {
+      font-size: 10px; letter-spacing: 2px; color: var(--text-dim);
+      font-family: var(--font-zh);
+    }
+    #voice-mode-toggle {
+      display: flex; gap: 4px;
+    }
+    .voice-mode-btn {
+      padding: 3px 8px; border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.1); background: transparent;
+      color: var(--text-dim); font-family: var(--font-zh); font-size: 9px;
+      cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
+    }
+    .voice-mode-btn.active { border-color: var(--primary); color: var(--primary); }
+    #wake-word-indicator {
+      font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+      padding: 2px 8px; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 2px;
+    }
+    #wake-word-indicator.listening {
+      color: #00FF88; border-color: rgba(0,255,136,0.4);
+      animation: wakeWordPulse 1.5s infinite;
+    }
+    @keyframes wakeWordPulse {
+      0%, 100% { box-shadow: 0 0 4px rgba(0,255,136,0.2); }
+      50% { box-shadow: 0 0 10px rgba(0,255,136,0.5); }
+    }
+
+    /* ===== GLITCH ===== */
+    @keyframes glitch {
+      0%, 100% { text-shadow: 0 0 30px rgba(255,51,85,0.8); }
+      25% { text-shadow: -2px 0 rgba(0,212,255,0.8), 2px 0 rgba(255,107,53,0.8); transform: translateX(-1px); }
+      75% { text-shadow: 2px 0 rgba(0,212,255,0.8), -2px 0 rgba(255,107,53,0.8); transform: translateX(1px); }
+    }
+
+    /* ===== SCROLLBARS ===== */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,0.5); }
+
+    /* ===== ERROR/404 ===== */
+    #error-page {
+      display: none; position: fixed; inset: 0; z-index: 8000;
+      background: var(--bg); flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+    }
+    #error-page.active { display: flex; }
+    .error-triangle {
+      width: 0; height: 0;
+      border-left: 50px solid transparent;
+      border-right: 50px solid transparent;
+      border-bottom: 86px solid #FFB800;
+      position: relative;
+    }
+    .error-triangle::after {
+      content: '!';
+      position: absolute; top: 28px; left: -12px;
+      color: #000; font-size: 40px; font-weight: 900;
+    }
+    .error-code {
+      font-size: 72px; font-weight: 700; letter-spacing: 8px;
+      color: var(--primary);
+    }
+    .error-msg {
+      font-family: var(--font-zh); font-size: 16px;
+      color: var(--text-secondary); letter-spacing: 3px;
+    }
+    .error-nav { display: flex; gap: 12px; }
+    .hud-arrow-btn {
+      padding: 10px 24px; border: 2px solid var(--primary);
+      background: transparent; color: var(--primary);
+      font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+      letter-spacing: 3px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .hud-arrow-btn:hover {
+      background: rgba(0,212,255,0.1);
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .hud-arrow { font-size: 18px; }
+
+    /* ===== RESIZE HANDLE ===== */
+    .resize-handle {
+      position: absolute; bottom: 0; right: 0;
+      width: 12px; height: 12px; cursor: se-resize;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .resize-handle::before {
+      content: '';
+      position: absolute; bottom: 3px; right: 3px;
+      width: 6px; height: 6px;
+      border-right: 2px solid var(--primary);
+      border-bottom: 2px solid var(--primary);
+    }
+    .panel.floating:hover .resize-handle { opacity: 1; }
+
+    /* Code blocks in chat */
+    .code-block-wrap { position: relative; margin: 6px 0; }
+    .code-copy-btn {
+      position: absolute; top: 4px; right: 4px;
+      padding: 2px 8px; border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.5);
+      color: var(--text-dim); font-size: 9px; cursor: pointer;
+      transition: all 0.15s; letter-spacing: 1px;
+    }
+    .code-copy-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Intel refresh row */
+    .intel-meta-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 8px; border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 9px; color: var(--text-dim);
+    }
+    .intel-refresh-btn {
+      margin-left: auto; padding: 2px 8px; border-radius: 2px;
+      border: 1px solid var(--panel-border); background: transparent;
+      color: var(--primary); font-size: 9px; cursor: pointer;
+      letter-spacing: 1px; transition: all 0.2s; font-family: var(--font-ui);
+    }
+    .intel-refresh-btn:hover { background: rgba(0,212,255,0.08); }
+
+    /* Floating panels z-index management */
+    .panel.floating { z-index: 200; }
+    .panel.floating.top { z-index: 300; }
+
+    /* Panel: settings overflow */
+    #panel-settings .panel-body { overflow-y: auto; }
+
+    /* grid spans for panels */
+    #panel-connections { display: none; }
+    #panel-graph { display: none; }
+    #panel-settings { display: none; }
+
+    /* mode themes */
+    body.mode-thinking {
+      --primary: #FF6B35;
+      --bg: #1A0A05;
+      --accent: #3D1A08;
+      --glow: rgba(255,107,53,0.3);
+      --glow-strong: rgba(255,107,53,0.6);
+      --panel-border: rgba(255,107,53,0.25);
+      --scanline-color: rgba(255,107,53,0.1);
+    }
+    body.mode-collaborative {
+      --primary: #00FF88;
+      --bg: #051A0A;
+      --accent: #0A3D1A;
+      --glow: rgba(0,255,136,0.3);
+      --glow-strong: rgba(0,255,136,0.6);
+      --panel-border: rgba(0,255,136,0.25);
+      --scanline-color: rgba(0,255,136,0.1);
+    }
+
+    /* Spin animation for loading */
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin { animation: spin 2s linear infinite; }
+
+    /* Circuit board background in settings */
+    #panel-settings .panel-body {
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+  </style>
+</head>
+<body class="mode-basic">
+
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splash">
+  <canvas id="splash-canvas"></canvas>
+  <div id="splash-content">
+    <div id="splash-logo">TFNK<sup>™</sup></div>
+    <div id="splash-status">初始化系統...</div>
+    <div id="splash-bar-wrap"><div id="splash-bar"></div></div>
+    <div id="splash-version">SYS v4.2.1 | BUILD 20260603</div>
+  </div>
+</div>
+
+<!-- ===== MODE SWEEP OVERLAY ===== -->
+<div id="mode-sweep"></div>
+
+<!-- ===== MATRIX BACKGROUND ===== -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ===== SCANLINE OVERLAY ===== -->
+<div id="scanline-overlay"></div>
+
+<!-- ===== EMERGENCY OVERLAY ===== -->
+<div id="emergency-overlay">
+  <div class="e-title">緊急停止</div>
+  <div class="e-sub">EMERGENCY STOP — ALL AGENTS HALTED</div>
+  <button id="emergency-resume">▶ 恢復系統</button>
+</div>
+
+<!-- ===== ERROR PAGE ===== -->
+<div id="error-page">
+  <div class="error-triangle"></div>
+  <div class="error-code">404</div>
+  <div class="error-msg">頁面不存在 — 系統找不到該資源</div>
+  <div class="error-nav">
+    <button class="hud-arrow-btn" onclick="document.getElementById('error-page').classList.remove('active')">
+      <span class="hud-arrow">◀</span> 返回
+    </button>
+    <button class="hud-arrow-btn" onclick="location.reload()">
+      <span class="hud-arrow">↺</span> 重新載入
+    </button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app">
+
+  <!-- HEADER BAR -->
+  <header id="header">
+    <div id="header-logo">TFNK<span>™</span></div>
+
+    <!-- Mode chips -->
+    <div id="mode-chips">
+      <button class="mode-chip active" data-mode="basic">基礎模式</button>
+      <button class="mode-chip" data-mode="thinking">思維模式</button>
+      <button class="mode-chip" data-mode="collaborative">協作模式</button>
+    </div>
+
+    <div id="header-right">
+      <!-- System stats -->
+      <div class="sys-stat" title="CPU 使用率">
+        <div class="sys-stat-label">CPU</div>
+        <div class="sys-stat-bar-wrap"><div class="sys-stat-bar" id="stat-cpu-bar" style="width:42%"></div></div>
+        <div class="sys-stat-val" id="stat-cpu-val">42%</div>
+      </div>
+      <div class="sys-stat" title="記憶體使用率">
+        <div class="sys-stat-label">RAM</div>
+        <div class="sys-stat-bar-wrap"><div class="sys-stat-bar" id="stat-ram-bar" style="width:67%"></div></div>
+        <div class="sys-stat-val" id="stat-ram-val">67%</div>
+      </div>
+      <div class="sys-stat" title="GPU 使用率">
+        <div class="sys-stat-label">GPU</div>
+        <div class="sys-stat-bar-wrap"><div class="sys-stat-bar" id="stat-gpu-bar" style="width:31%"></div></div>
+        <div class="sys-stat-val" id="stat-gpu-val">31%</div>
+      </div>
+
+      <!-- Panel toggles -->
+      <div id="panel-toggles">
+        <button class="panel-toggle-btn active" data-panel="panel-chat">聊天</button>
+        <button class="panel-toggle-btn active" data-panel="panel-models">模型</button>
+        <button class="panel-toggle-btn active" data-panel="panel-tasks">任務</button>
+        <button class="panel-toggle-btn active" data-panel="panel-intel">情報</button>
+        <button class="panel-toggle-btn" data-panel="panel-connections">連線</button>
+        <button class="panel-toggle-btn" data-panel="panel-graph">關係圖</button>
+        <button class="panel-toggle-btn" data-panel="panel-settings">設定</button>
+      </div>
+
+      <!-- Emergency stop -->
+      <button id="emergency-stop-btn" title="緊急停止 (Ctrl+E)">⬛</button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <main id="workspace">
+
+    <!-- 1. CHAT PANEL -->
+    <div class="panel" id="panel-chat" data-panel-id="chat">
+      <div class="panel-header" data-panel="panel-chat">
+        <span class="panel-icon">💬</span>
+        <span class="panel-title">對話介面</span>
+        <span class="panel-mode-badge" id="chat-mode-badge">基礎</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float" title="浮動面板">⧉</button>
+          <button class="panel-btn" data-action="minimize" title="最小化">−</button>
+          <button class="panel-btn close" data-action="close" title="關閉">×</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <!-- Emoji display -->
+        <div id="emoji-display">
+          <canvas id="emoji-canvas" width="64" height="64"></canvas>
+          <div id="emoji-state-label">待機中</div>
+        </div>
+        <!-- Messages -->
+        <div id="chat-messages">
+          <div class="msg agent">
+            <div class="msg-avatar">AI</div>
+            <div>
+              <div class="msg-bubble">你好！我是 TFNK™ 自主智能代理。請問有什麼我可以協助你的？</div>
+              <div class="msg-time">系統初始化 — 就緒</div>
+            </div>
+          </div>
+        </div>
+        <!-- Typing indicator (hidden) -->
+        <div id="typing-indicator" class="msg agent" style="display:none">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-bubble">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Input area -->
+        <div id="chat-input-area">
+          <textarea id="chat-input" placeholder="輸入訊息... (Ctrl+Enter 發送)" rows="3"></textarea>
+          <div id="chat-input-buttons">
+            <button class="chat-btn voice-btn" id="voice-ptt-btn" title="按住說話 (Ctrl+Space)">🎤</button>
+            <button class="chat-btn" id="chat-send-btn">發送 ▶</button>
+          </div>
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- 2. MODEL STATUS PANEL -->
+    <div class="panel" id="panel-models" data-panel-id="models">
+      <div class="panel-header" data-panel="panel-models">
+        <span class="panel-icon">⚡</span>
+        <span class="panel-title">模型狀態</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float">⧉</button>
+          <button class="panel-btn" data-action="minimize">−</button>
+          <button class="panel-btn close" data-action="close">×</button>
+        </div>
+      </div>
+      <div class="panel-body panel-body-scroll">
+        <div id="model-current">
+          <div id="model-current-name">GPT-4o</div>
+          <div id="model-current-sub">OPENAI · MULTIMODAL · 128K CTX</div>
+        </div>
+        <select class="model-switcher" id="model-switcher">
+          <option value="gpt-4o">GPT-4o (OpenAI)</option>
+          <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
+          <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
+          <option value="deepseek-v3">DeepSeek-V3</option>
+          <option value="llama-3.1-405b">Llama 3.1 405B (Meta)</option>
+          <option value="qwen2.5-72b">Qwen2.5-72B (Alibaba)</option>
+        </select>
+
+        <!-- Tokens/s gauge -->
+        <div id="tokens-gauge-wrap">
+          <div class="gauge-label">TOKEN/S 生成速度</div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="tokens-gauge" style="width:65%"></div>
+          </div>
+          <div class="gauge-ticks">
+            <span class="gauge-tick">0</span>
+            <span class="gauge-tick" id="tokens-val" style="color:var(--primary);font-weight:700">78 t/s</span>
+            <span class="gauge-tick">120</span>
+          </div>
+        </div>
+
+        <!-- Context bar -->
+        <div id="context-bar-wrap">
+          <div class="gauge-label">上下文使用量</div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="ctx-gauge" style="width:23%;background:linear-gradient(90deg,#FFB800,#FF6B35)"></div>
+          </div>
+          <div class="gauge-ticks">
+            <span class="gauge-tick">0</span>
+            <span class="gauge-tick" style="color:#FFB800;font-weight:700" id="ctx-val">29,441 / 128K</span>
+            <span class="gauge-tick">128K</span>
+          </div>
+        </div>
+
+        <!-- Thinking depth -->
+        <div id="thinking-depth">
+          <span class="depth-label">思維深度</span>
+          <div class="depth-block active" id="d1"></div>
+          <div class="depth-block active" id="d2"></div>
+          <div class="depth-block active" id="d3"></div>
+          <div class="depth-block" id="d4"></div>
+          <div class="depth-block" id="d5"></div>
+          <div class="depth-block" id="d6"></div>
+          <div class="depth-block" id="d7"></div>
+          <div class="depth-block" id="d8"></div>
+        </div>
+
+        <!-- Stats grid -->
+        <div class="model-stats-grid">
+          <div class="stat-block">
+            <div class="stat-block-label">回應時間</div>
+            <div class="stat-block-val" id="stat-latency">342<span class="stat-block-unit">ms</span></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-block-label">請求次數</div>
+            <div class="stat-block-val" id="stat-requests">1,247</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-block-label">成功率</div>
+            <div class="stat-block-val" id="stat-success">99.2<span class="stat-block-unit">%</span></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-block-label">成本</div>
+            <div class="stat-block-val" id="stat-cost">$2.47</div>
+          </div>
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- 3. TASK MANAGER PANEL -->
+    <div class="panel" id="panel-tasks" data-panel-id="tasks">
+      <div class="panel-header" data-panel="panel-tasks">
+        <span class="panel-icon">📋</span>
+        <span class="panel-title">任務管理員</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float">⧉</button>
+          <button class="panel-btn" data-action="minimize">−</button>
+          <button class="panel-btn close" data-action="close">×</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="task-tabs">
+          <div class="task-tab active" data-tab="running">執行中 <span id="task-count-running">2</span></div>
+          <div class="task-tab" data-tab="queued">排隊中 <span id="task-count-queued">4</span></div>
+          <div class="task-tab" data-tab="done">已完成 <span id="task-count-done">12</span></div>
+        </div>
+        <div id="gantt-wrap"></div>
+        <button id="add-task-btn">+ 新增任務</button>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- 4. INTEL PANEL -->
+    <div class="panel" id="panel-intel" data-panel-id="intel">
+      <div class="panel-header" data-panel="panel-intel">
+        <span class="panel-icon">🧠</span>
+        <span class="panel-title">情報中心</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float">⧉</button>
+          <button class="panel-btn" data-action="minimize">−</button>
+          <button class="panel-btn close" data-action="close">×</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="intel-tabs">
+          <div class="intel-tab active" data-tab="models">模型</div>
+          <div class="intel-tab" data-tab="news">新聞</div>
+          <div class="intel-tab" data-tab="free">免費</div>
+          <div class="intel-tab" data-tab="agents">代理</div>
+        </div>
+
+        <!-- Models tab -->
+        <div class="intel-pane active" id="intel-pane-models"></div>
+        <!-- News tab -->
+        <div class="intel-pane" id="intel-pane-news"></div>
+        <!-- Free models tab -->
+        <div class="intel-pane" id="intel-pane-free"></div>
+        <!-- Agents tab -->
+        <div class="intel-pane" id="intel-pane-agents"></div>
+
+        <div class="intel-meta-row">
+          <span>更新於: <span id="intel-updated">剛剛</span></span>
+          <button class="intel-refresh-btn" id="intel-refresh-btn">↺ 刷新</button>
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- 5. CONNECTIONS PANEL (hidden by default) -->
+    <div class="panel" id="panel-connections" data-panel-id="connections">
+      <div class="panel-header" data-panel="panel-connections">
+        <span class="panel-icon">🔌</span>
+        <span class="panel-title">連線狀態</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float">⧉</button>
+          <button class="panel-btn" data-action="minimize">−</button>
+          <button class="panel-btn close" data-action="close">×</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-body-scroll">
+          <table class="conn-table" id="conn-table">
+            <thead>
+              <tr>
+                <th>狀態</th>
+                <th>名稱</th>
+                <th>延遲</th>
+                <th>時長</th>
+                <th>用量</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="conn-tbody"></tbody>
+          </table>
+        </div>
+        <button class="conn-refresh-btn" id="conn-refresh-btn">↺ 強制刷新</button>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- 6. RELATION GRAPH PANEL (hidden by default) -->
+    <div class="panel" id="panel-graph" data-panel-id="graph">
+      <div class="panel-header" data-panel="panel-graph">
+        <span class="panel-icon">🕸</span>
+        <span class="panel-title">知識關係圖</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float">⧉</button>
+          <button class="panel-btn" data-action="minimize">−</button>
+          <button class="panel-btn close" data-action="close">×</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="graph-canvas-wrap">
+          <svg id="graph-svg"></svg>
+          <div class="graph-controls">
+            <button class="graph-ctrl-btn active" id="graph-style-circuit">電路板</button>
+            <button class="graph-ctrl-btn" id="graph-style-neural">神經網</button>
+            <button class="graph-ctrl-btn" id="graph-reset-btn">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- 7. SETTINGS PANEL (hidden by default) -->
+    <div class="panel" id="panel-settings" data-panel-id="settings">
+      <div class="panel-header" data-panel="panel-settings">
+        <span class="panel-icon">⚙</span>
+        <span class="panel-title">系統設定</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-action="float">⧉</button>
+          <button class="panel-btn" data-action="minimize">−</button>
+          <button class="panel-btn close" data-action="close">×</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <!-- Mode rotary -->
+        <div class="settings-section">
+          <div class="settings-section-title">模式選擇器</div>
+          <div id="mode-rotary-wrap">
+            <svg class="rotary-svg" width="80" height="80" id="mode-rotary-svg" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="2"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="1"/>
+              <!-- Mode dots -->
+              <circle class="rotary-dot" cx="40" cy="10" r="5" fill="#00D4FF" data-mode="basic"/>
+              <circle class="rotary-dot" cx="70" cy="65" r="5" fill="rgba(255,107,53,0.4)" data-mode="thinking"/>
+              <circle class="rotary-dot" cx="10" cy="65" r="5" fill="rgba(0,255,136,0.4)" data-mode="collaborative"/>
+              <!-- Pointer -->
+              <line id="rotary-pointer" x1="40" y1="40" x2="40" y2="14" stroke="#00D4FF" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="40" cy="40" r="4" fill="#00D4FF"/>
+            </svg>
+            <div>
+              <div class="mode-rotary-label" id="rotary-label">基礎模式</div>
+              <div style="font-size:9px;color:var(--text-dim);margin-top:4px">點擊切換模式</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Keys -->
+        <div class="settings-section">
+          <div class="settings-section-title">API 連接埠</div>
+          <div class="port-row">
+            <div class="port-indicator" id="port-openai-ind"></div>
+            <input class="port-input" type="password" placeholder="OpenAI API Key (sk-...)" id="port-openai" />
+            <button class="port-save-btn" data-port="openai">儲存</button>
+            <button class="pull-plug-btn" data-port="openai" title="拔除連線">⏏</button>
+          </div>
+          <div class="port-row">
+            <div class="port-indicator" id="port-anthropic-ind"></div>
+            <input class="port-input" type="password" placeholder="Anthropic API Key (sk-ant-...)" id="port-anthropic" />
+            <button class="port-save-btn" data-port="anthropic">儲存</button>
+            <button class="pull-plug-btn" data-port="anthropic" title="拔除連線">⏏</button>
+          </div>
+          <div class="port-row">
+            <div class="port-indicator" id="port-google-ind"></div>
+            <input class="port-input" type="password" placeholder="Google API Key (AIza...)" id="port-google" />
+            <button class="port-save-btn" data-port="google">儲存</button>
+            <button class="pull-plug-btn" data-port="google" title="拔除連線">⏏</button>
+          </div>
+          <div class="port-row">
+            <div class="port-indicator" id="port-custom-ind"></div>
+            <input class="port-input" type="text" placeholder="自訂端點 URL" id="port-custom" />
+            <button class="port-save-btn" data-port="custom">儲存</button>
+            <button class="pull-plug-btn" data-port="custom" title="拔除連線">⏏</button>
+          </div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="settings-section">
+          <div class="settings-section-title">功能開關</div>
+          <div class="chip-toggle" data-setting="voice_enabled">
+            <div class="chip-socket on" data-chip="voice_enabled">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">語音識別</span>
+            <span class="chip-status" id="chip-status-voice_enabled">啟用</span>
+          </div>
+          <div class="chip-toggle" data-setting="auto_think">
+            <div class="chip-socket on" data-chip="auto_think">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">自動思維鏈</span>
+            <span class="chip-status" id="chip-status-auto_think">啟用</span>
+          </div>
+          <div class="chip-toggle" data-setting="web_search">
+            <div class="chip-socket" data-chip="web_search">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">網路搜尋</span>
+            <span class="chip-status" id="chip-status-web_search">停用</span>
+          </div>
+          <div class="chip-toggle" data-setting="code_exec">
+            <div class="chip-socket" data-chip="code_exec">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">程式碼執行</span>
+            <span class="chip-status" id="chip-status-code_exec">停用</span>
+          </div>
+          <div class="chip-toggle" data-setting="file_access">
+            <div class="chip-socket" data-chip="file_access">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">檔案存取</span>
+            <span class="chip-status" id="chip-status-file_access">停用</span>
+          </div>
+          <div class="chip-toggle" data-setting="memory">
+            <div class="chip-socket on" data-chip="memory">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">長期記憶</span>
+            <span class="chip-status" id="chip-status-memory">啟用</span>
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="settings-section">
+          <div class="settings-section-title">安全鎖</div>
+          <div class="chip-toggle" data-setting="require_confirm">
+            <div class="chip-socket on" data-chip="require_confirm">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">執行前確認</span>
+            <span class="chip-status" id="chip-status-require_confirm">啟用</span>
+          </div>
+          <div class="chip-toggle" data-setting="sandbox">
+            <div class="chip-socket on" data-chip="sandbox">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">沙盒模式</span>
+            <span class="chip-status" id="chip-status-sandbox">啟用</span>
+          </div>
+          <div class="chip-toggle" data-setting="audit_log">
+            <div class="chip-socket on" data-chip="audit_log">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">稽核日誌</span>
+            <span class="chip-status" id="chip-status-audit_log">啟用</span>
+          </div>
+        </div>
+
+        <!-- Voice settings -->
+        <div class="settings-section">
+          <div class="settings-section-title">語音設定</div>
+          <div style="padding:4px 0;">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;font-family:var(--font-zh);">喚醒詞</div>
+            <input class="port-input" type="text" placeholder="輸入喚醒詞..." id="wake-word-input" value="嘿 TFNK" style="width:100%;margin-bottom:8px;" />
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;font-family:var(--font-zh);">語音靈敏度</div>
+            <input type="range" min="0" max="100" value="70" id="voice-sensitivity" style="width:100%;accent-color:var(--primary);" />
+          </div>
+        </div>
+
+        <!-- Tool policy -->
+        <div class="settings-section">
+          <div class="settings-section-title">工具政策</div>
+          <div class="chip-toggle" data-setting="tool_browser">
+            <div class="chip-socket" data-chip="tool_browser">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">瀏覽器工具</span>
+            <span class="chip-status" id="chip-status-tool_browser">停用</span>
+          </div>
+          <div class="chip-toggle" data-setting="tool_terminal">
+            <div class="chip-socket" data-chip="tool_terminal">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">終端機工具</span>
+            <span class="chip-status" id="chip-status-tool_terminal">停用</span>
+          </div>
+          <div class="chip-toggle" data-setting="tool_email">
+            <div class="chip-socket" data-chip="tool_email">
+              <div class="chip-insert"></div>
+              <div class="chip-pins"><div class="chip-pin"></div><div class="chip-pin"></div><div class="chip-pin"></div></div>
+            </div>
+            <span class="chip-label">電子郵件工具</span>
+            <span class="chip-status" id="chip-status-tool_email">停用</span>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="settings-section">
+          <div class="settings-section-title">外觀</div>
+          <div style="padding:4px 0;">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;font-family:var(--font-zh);">矩陣密度</div>
+            <input type="range" min="0" max="100" value="50" id="matrix-density" style="width:100%;accent-color:var(--primary);" />
+            <div style="font-size:10px;color:var(--text-dim);margin-top:8px;margin-bottom:6px;font-family:var(--font-zh);">字體大小</div>
+            <input type="range" min="10" max="18" value="13" id="font-size-slider" style="width:100%;accent-color:var(--primary);" />
+          </div>
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+  </main>
+
+  <!-- VOICE BAR -->
+  <div id="voice-bar">
+    <span id="voice-mic-icon">🎤</span>
+    <canvas id="voice-waveform" width="200" height="20"></canvas>
+    <span id="voice-mode-label">語音模式:</span>
+    <div id="voice-mode-toggle">
+      <button class="voice-mode-btn active" data-vmode="off">關閉</button>
+      <button class="voice-mode-btn" data-vmode="ptt">按住說話</button>
+      <button class="voice-mode-btn" data-vmode="always">常開</button>
+    </div>
+    <div id="wake-word-indicator">WAKE: 嘿 TFNK</div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- Panel scripts -->
+<script src="components/matrix-bg.js"></script>
+<script src="components/splash.js"></script>
+<script src="components/emoji.js"></script>
+<script src="panels/chat.js"></script>
+<script src="panels/settings.js"></script>
+<script src="panels/tasks.js"></script>
+<script src="panels/connections.js"></script>
+<script src="panels/intel.js"></script>
+<script src="panels/graph.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

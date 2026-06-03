@@ -1,0 +1,68 @@
+# TFNK™ Backend Dependencies
+
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+websockets==13.1
+python-multipart==0.0.17
+httpx==0.28.1
+aiohttp==3.11.10
+aiofiles==24.1.0
+
+# AI / LLM
+anthropic==0.40.0
+openai==1.57.4
+
+# Speech / Voice
+faster-whisper==1.1.0
+edge-tts==6.1.19
+
+# Data validation / Settings
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+
+# Task scheduling
+APScheduler==3.10.4
+
+# Image / OCR / Translation
+Pillow==11.0.0
+pytesseract==0.3.13
+googletrans==4.0.0rc1
+
+# System control
+pyautogui==0.9.54
+pygetwindow==0.0.9
+psutil==6.1.0
+
+# Language / Text processing
+langdetect==1.0.9
+opencc-python-reimplemented==0.1.7
+
+# Media
+yt-dlp==2024.12.6
+
+# Google APIs
+google-api-python-client==2.154.0
+google-auth==2.36.0
+google-auth-httplib2==0.2.0
+
+# Finance
+yfinance==0.2.50
+alpha-vantage==3.0.0
+finnhub-python==2.4.20
+
+# Full-text search
+Whoosh==2.7.4
+
+# File monitoring
+watchdog==6.0.0
+
+# Security / Crypto
+cryptography==44.0.0
+
+# Utilities
+numpy==2.2.0
+python-dateutil==2.9.0
+pytz==2024.2
+orjson==3.10.12

@@ -1,0 +1,98 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "devPath": "http://localhost:8000",
+    "distDir": "http://localhost:8000",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "TFNK™",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": true,
+        "open": true,
+        "sidecar": true
+      },
+      "window": {
+        "all": true
+      },
+      "globalShortcut": {
+        "all": true
+      },
+      "notification": {
+        "all": true
+      },
+      "systemTray": {},
+      "clipboard": {
+        "all": true
+      },
+      "path": {
+        "all": true
+      },
+      "fs": {
+        "all": true,
+        "scope": ["$APPDATA", "$DOCUMENT", "$DOWNLOAD"]
+      },
+      "http": {
+        "all": true,
+        "scope": ["http://localhost:*"]
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": ["msi", "nsis"],
+      "identifier": "com.tfnk.app",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "category": "Utility",
+      "shortDescription": "TFNK™ Neural Agent Desktop",
+      "longDescription": "TFNK™ 神經代理桌面 — 自主 AI 代理工作站",
+      "resources": [],
+      "externalBin": ["../server"],
+      "windows": {
+        "wix": {
+          "language": "zh-TW"
+        }
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true,
+      "menuOnLeftClick": false
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "title": "TFNK™ 神經代理",
+        "width": 1600,
+        "height": 1000,
+        "minWidth": 1200,
+        "minHeight": 700,
+        "resizable": true,
+        "transparent": false,
+        "decorations": false,
+        "fullscreen": false,
+        "center": true,
+        "focus": true,
+        "visible": true,
+        "url": "http://localhost:8000"
+      }
+    ]
+  }
+}

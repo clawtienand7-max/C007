@@ -1,0 +1,108 @@
+//@version=5
+// =============================================================================
+// 雙向極光防禦策略 (Aurora Dual-Engine Strategy) — TradingView 交叉驗證
+// 趨勢跟隨 + 波動率克制；ATR 風險配倉 + 非對稱多空追蹤止損 + 單日熔斷。
+// 參數對齊 docs/aurora-dual-engine-blueprint.md 第七節。
+// 驗收標準：Profit Factor > 1.5 且 Max Drawdown <= 8%。
+// =============================================================================
+strategy("Aurora Dual-Engine Strategy 雙向極光防禦策略",
+     overlay=true,
+     initial_capital=100000,
+     currency=currency.HKD,
+     default_qty_type=strategy.fixed,
+     commission_type=strategy.commission.percent,
+     commission_value=0.03,
+     calc_on_every_tick=false,
+     process_orders_on_close=true)
+
+// ---- Inputs（統一參數）----
+emaFastLen   = input.int(50,   "快線 EMA")
+emaSlowLen   = input.int(200,  "慢線 EMA")
+bbLen        = input.int(20,   "布林線週期")
+bbMult       = input.float(2.0,"布林線倍數")
+atrLen       = input.int(14,   "ATR 週期")
+riskPerTrade = input.float(1000,"每筆風險金額 (HKD)")
+longAtrMult  = input.float(2.0, "好倉止損系數 (×ATR)")
+shortAtrMult = input.float(1.5, "淡倉止損系數 (×ATR)")
+dailyDDPct   = input.float(0.02,"單日最大回撤 %", step=0.005)
+fridayTrim   = input.bool(true, "週五尾盤減倉 50%")
+
+// ---- 指標 ----
+emaFast = ta.ema(close, emaFastLen)
+emaSlow = ta.ema(close, emaSlowLen)
+basis   = ta.sma(close, bbLen)
+dev     = bbMult * ta.stdev(close, bbLen)
+bbUpper = basis + dev
+bbLower = basis - dev
+atr     = ta.atr(atrLen)
+
+// ---- 路徑三：ATR 風險配倉 ----
+qty = atr > 0 ? math.floor(riskPerTrade / (atr * 2.0)) : 0
+
+// ---- 信號 ----
+longSignal  = close > bbUpper and emaFast > emaSlow
+shortSignal = close < bbLower and emaFast < emaSlow
+
+// =============================================================================
+// 路徑一：每日開市鎖定熔斷線（開市資產 × 0.98），盤中跌穿即全日熔斷
+// =============================================================================
+isNewDay = ta.change(time("D")) != 0
+var float dayOpenEquity = na
+if isNewDay
+    dayOpenEquity := strategy.equity
+ddLine       = nz(dayOpenEquity, strategy.equity) * (1.0 - dailyDDPct)
+circuitBreak = strategy.equity < ddLine
+canTrade     = not circuitBreak
+
+// =============================================================================
+// 路徑四：雙向動態追蹤止損（非對稱系數）
+// =============================================================================
+var float dynHigh = na
+var float dynLow  = na
+
+// 好倉防線 2.0×ATR
+if strategy.position_size > 0
+    dynHigh := na(dynHigh) ? high : math.max(dynHigh, high)
+    if close < dynHigh - longAtrMult * atr
+        strategy.close("Long", comment="好倉移動止損")
+        dynHigh := na
+else
+    dynHigh := na
+
+// 淡倉防線 1.5×ATR（收緊）
+if strategy.position_size < 0
+    dynLow := na(dynLow) ? low : math.min(dynLow, low)
+    if close > dynLow + shortAtrMult * atr
+        strategy.close("Short", comment="淡倉移動止損")
+        dynLow := na
+else
+    dynLow := na
+
+// =============================================================================
+// 路徑二：多空信號開倉與自動切換（先平反向，再開新倉）
+// =============================================================================
+if canTrade and longSignal and qty > 0
+    if strategy.position_size < 0
+        strategy.close("Short", comment="切換前先平淡倉")
+    strategy.entry("Long", strategy.long, qty=qty)
+
+if canTrade and shortSignal and qty > 0
+    if strategy.position_size > 0
+        strategy.close("Long", comment="切換前先平好倉")
+    strategy.entry("Short", strategy.short, qty=qty)
+
+// 改進#2：週五尾盤（15:50 後）強制減倉 50%
+isFriday   = dayofweek == dayofweek.friday
+afterTrim  = hour == 15 and minute >= 50
+if fridayTrim and isFriday and afterTrim and strategy.position_size != 0
+    strategy.close_all(comment="週五尾盤減倉")  // 簡化：回測以全平近似 50% 減倉效果
+
+// 路徑一：盤中熔斷 → 全線清倉並全日停手
+if circuitBreak
+    strategy.close_all(comment="單日熔斷")
+
+// ---- 視覺化 ----
+plot(emaFast, "EMA Fast", color.new(color.orange, 0))
+plot(emaSlow, "EMA Slow", color.new(color.blue, 0))
+plot(bbUpper, "BB Upper", color.new(color.gray, 50))
+plot(bbLower, "BB Lower", color.new(color.gray, 50))

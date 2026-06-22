@@ -37,6 +37,12 @@ import { loadPersistedSelfExt } from "./lib/selfExt.js";
 import * as research from "./agents/research.js";
 import * as sandbox from "./agents/sandbox.js";
 import * as selfUpgrade from "./agents/selfUpgrade.js";
+import * as telemetry from "./lib/telemetry.js";
+import { buildGraph, getNode } from "./lib/omGraph.js";
+import * as weather from "./lib/weather.js";
+import * as chat from "./lib/chat.js";
+import * as hud from "./lib/hud.js";
+import { loadPersistedHud } from "./lib/hud.js";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -73,7 +79,7 @@ function readBody(req) {
 }
 
 async function serveStatic(req, res, pathname) {
-  let rel = pathname === "/" ? "/index.html" : pathname;
+  let rel = pathname === "/" ? "/index.html" : pathname === "/hud" ? "/hud.html" : pathname;
   const filePath = normalize(join(ROOT, "frontend", rel));
   if (!filePath.startsWith(join(ROOT, "frontend"))) {
     return json(res, 403, { error: "forbidden" });
@@ -93,7 +99,7 @@ function route(method, path, handler) {
 }
 
 // --- meta -------------------------------------------------------------------
-route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.7.0", time: new Date().toISOString() }));
+route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.8.0", time: new Date().toISOString() }));
 
 route("GET", "/api/actions", () => {
   const reg = loadActions();
@@ -369,6 +375,46 @@ route("POST", "/api/self/upgrade/request-approval", (body) => selfUpgrade.reques
 route("POST", "/api/self/upgrade/apply", (body) => selfUpgrade.apply(body));
 route("POST", "/api/self/upgrade/rollback", (body) => selfUpgrade.rollback(body));
 
+// --- HUD interface (V0.8) ---------------------------------------------------
+route("GET", "/api/hud/state", () => ({ hud: hud.getState() }));
+route("POST", "/api/hud/animation/toggle", (body) => hud.toggleAnimation(body.on));
+route("POST", "/api/hud/theme/update", (body) => hud.updateTheme(body));
+route("GET", "/api/hud/layout", () => hud.getLayout());
+route("POST", "/api/hud/layout/save", (body) => hud.saveLayout(body.layout));
+
+// --- telemetry (V0.8) -------------------------------------------------------
+route("GET", "/api/telemetry/system", () => telemetry.getSystem());
+route("POST", "/api/telemetry/refresh", () => telemetry.getSystem());
+route("GET", "/api/telemetry/gpu", () => telemetry.getGpu());
+route("GET", "/api/telemetry/network", () => telemetry.getNetwork());
+route("GET", "/api/telemetry/disk", () => telemetry.getDisk());
+
+// --- OM relation graph (V0.8) -----------------------------------------------
+route("GET", "/api/om/graph", () => buildGraph());
+route("GET", "/api/om/graph/node", (_b, q) => {
+  const n = getNode(q.id);
+  return n ? { node: n } : { error: "node not found", _status: 404 };
+});
+route("GET", "/api/om/memory/recent", () => searchMemory({ q: "", limit: 10 }));
+
+// --- weather (V0.8) ---------------------------------------------------------
+route("GET", "/api/weather/hong-kong", () => weather.getHongKongWeather());
+route("GET", "/api/weather/hong-kong/rainfall", () => weather.getRainfall());
+route("GET", "/api/weather/hong-kong/alerts", () => weather.getAlerts());
+
+// --- chat dock (V0.8) -------------------------------------------------------
+route("GET", "/api/chat/sessions", () => ({ sessions: chat.listSessions() }));
+route("POST", "/api/chat/session/new", (body) => ({ session: chat.newSession(body) }));
+route("GET", "/api/chat/session", (_b, q) => {
+  const s = chat.getSession(q.id);
+  return s ? { session: s } : { error: "session not found", _status: 404 };
+});
+route("POST", "/api/chat/message", (body) => {
+  const r = chat.postMessage(body);
+  return r.error ? { ...r, _status: 400 } : r;
+});
+route("POST", "/api/chat/session/pin-to-hud", (body) => chat.pinToHud(body.id, body.pinned !== false));
+
 // --- test center ------------------------------------------------------------
 route("GET", "/api/tests", () => listTests());
 route("POST", "/api/tests/run", async () => {
@@ -425,6 +471,7 @@ if (isMain) {
   loadPersistedScheduler();
   loadPersistedContracts();
   loadPersistedSelfExt();
+  loadPersistedHud();
   // Scheduler tick loop — fires due tasks unattended (high-risk tasks park as
   // pending_approval inside runTask).
   setInterval(() => {
@@ -433,6 +480,6 @@ if (isMain) {
   const port = Number(process.env.PORT) || 4007;
   createApp().listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`TFNK Agent OS v0.7 listening on http://localhost:${port}`);
+    console.log(`TFNK Agent OS v0.8 listening on http://localhost:${port} — HUD at /hud`);
   });
 }

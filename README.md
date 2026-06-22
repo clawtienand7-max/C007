@@ -1,4 +1,4 @@
-# TFNK Agent OS — V0.7 (Self-Extension & Self-Upgrade Build)
+# TFNK Agent OS — V0.8 (OM HUD Command Interface)
 
 > A **verifiable, controllable, repairable** computer-agent foundation.
 > Not a chatbot with decorative buttons. The iron rule of this codebase:
@@ -55,6 +55,8 @@ restricted/offline environments.
 | **Self-Upgrade Orchestrator** (gated delegate/apply/rollback) | ✅ V0.7 | `backend/agents/selfUpgrade.js` |
 | **Self-Upgrade Center UI** | ✅ V0.7 | `frontend/` |
 | Live web/GitHub fetch + real package install | 🔌 gated/pluggable (network + approval required) | honest blocked status |
+| **OM HUD interface** (`/hud`: rings, OM graph, telemetry, weather, chat) | ✅ V0.8 | `frontend/hud.*`, `backend/lib/{telemetry,omGraph,weather,chat,hud}.js` |
+| GPU/disk/throughput telemetry · HK weather · chat AI reply | 🔌 honest unavailable / real-intent reply (no LLM) | metrics agent · network · LLM backend |
 | Live USB/RTSP/RTMP/HDMI capture + MediaPipe model | 🔌 pluggable (external worker via `/api/vision/ingest`) | honest capability detection |
 | Workflow Canvas | ⏳ Phase 4 (declared, disabled) | registry `implemented:false` |
 
@@ -84,8 +86,8 @@ real camera/RTSP stream here — and the project's iron rule forbids faking. So:
 
 ```bash
 npm start            # serve UI + API on http://localhost:4007
-npm test             # run the real test suite (70 tests)
-npm run smoke        # real-world end-to-end checks (42 checks, boots the app)
+npm test             # run the real test suite (85 tests)
+npm run smoke        # real-world end-to-end checks (48 checks, boots the app)
 npm run audit        # run the UI Audit Agent from the CLI
 ```
 
@@ -273,6 +275,7 @@ test/                  api / agents / phase23 / v04 / v05 / v07 (.test.js) — 7
 - **V0.4** — ✅ Cross-device LAN collaboration (discovery / pairing / trust / delegation) + safe gesture control (camera adapters, gesture→action mapper, vision pipeline).
 - **V0.5** — ✅ Scheduler (once/interval/cron) + Requirement Contracts + Delivery Verification (TFNK as acceptance officer for Codex/Claude) + Real Usage Runner.
 - **V0.7** — ✅ Self-extension: capability-gap detection, candidate scoring, research/scout, sandbox inspection, and a permission-gated self-upgrade lifecycle.
+- **V0.8** — ✅ OM HUD Command Interface at `/hud`: rotating concentric rings, OM relation graph, real telemetry, HK weather, chat dock + frameless transparent conversation table.
 - **Phase 4** — ⏳ Workflow Canvas (trigger / agent / tool / approval / retry nodes).
 - **Phase 5** — ⏳ Engineering agent (issue → branch → edit → test → PR → rollback).
 

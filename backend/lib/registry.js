@@ -128,6 +128,28 @@ export const LIVE_ROUTES = new Set([
   "POST /api/self/upgrade/request-approval",
   "POST /api/self/upgrade/apply",
   "POST /api/self/upgrade/rollback",
+  // V0.8 — OM HUD interface
+  "GET /api/hud/state",
+  "POST /api/hud/animation/toggle",
+  "POST /api/hud/theme/update",
+  "GET /api/hud/layout",
+  "POST /api/hud/layout/save",
+  "GET /api/telemetry/system",
+  "POST /api/telemetry/refresh",
+  "GET /api/telemetry/gpu",
+  "GET /api/telemetry/network",
+  "GET /api/telemetry/disk",
+  "GET /api/om/graph",
+  "GET /api/om/graph/node",
+  "GET /api/om/memory/recent",
+  "GET /api/weather/hong-kong",
+  "GET /api/weather/hong-kong/rainfall",
+  "GET /api/weather/hong-kong/alerts",
+  "GET /api/chat/sessions",
+  "POST /api/chat/session/new",
+  "GET /api/chat/session",
+  "POST /api/chat/message",
+  "POST /api/chat/session/pin-to-hud",
 ]);
 
 export function routeExists(method, api) {

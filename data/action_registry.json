@@ -421,6 +421,83 @@
       "fallback": "request_permission"
     },
     {
+      "id": "hud.toggle_animation",
+      "label": "Toggle HUD Animation",
+      "ui_element": "btn_hud_anim",
+      "api": "/api/hud/animation/toggle",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_hud_toggle_animation",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "hud.telemetry.refresh",
+      "label": "Refresh Telemetry",
+      "ui_element": "btn_hud_telemetry",
+      "api": "/api/telemetry/refresh",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_telemetry_refresh",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "om.graph.load",
+      "label": "Load OM Relation Graph",
+      "ui_element": "btn_hud_omgraph",
+      "api": "/api/om/graph",
+      "method": "GET",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_om_graph_load",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "weather.hk.refresh",
+      "label": "Refresh Hong Kong Weather",
+      "ui_element": "btn_hud_weather",
+      "api": "/api/weather/hong-kong",
+      "method": "GET",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_hk_weather_refresh",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "chat.new",
+      "label": "New Chat",
+      "ui_element": "btn_hud_newchat",
+      "api": "/api/chat/session/new",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_chat_new",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "chat.message.send",
+      "label": "Send Chat Message",
+      "ui_element": "btn_hud_send",
+      "api": "/api/chat/message",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_chat_send",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "hud.layout.save",
+      "label": "Save HUD Layout",
+      "ui_element": "btn_hud_savelayout",
+      "api": "/api/hud/layout/save",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_hud_layout_save",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
       "id": "workflow.run",
       "label": "Run Workflow (Phase 4)",
       "ui_element": "btn_run_workflow",

@@ -291,6 +291,43 @@ async function main() {
     return "applied_pending_merge (no auto-rewrite)";
   });
 
+  // ---- V0.8: OM HUD interface ----
+  await check("HUD page served at /hud", async () => {
+    const html = await fetch(baseA + "/hud").then((r) => r.text());
+    assert(/OM HUD/.test(html), "hud page missing");
+    return "served";
+  });
+  await check("telemetry returns real CPU/RAM (honest GPU)", async () => {
+    const r = await get(baseA, "/api/telemetry/system");
+    assert(r.memory.total > 0, "no memory data");
+    assert("available" in r.gpu, "gpu flag missing");
+    return `RAM ${r.memory.used}/${r.memory.total}GB, GPU ${r.gpu.available ? "present" : "unavailable(honest)"}`;
+  });
+  await check("OM relation graph has core node", async () => {
+    const r = await get(baseA, "/api/om/graph");
+    assert(r.nodes.find((n) => n.id === "om_core"), "no core");
+    return `${r.nodes.length} nodes`;
+  });
+  await check("HK weather never fabricated", async () => {
+    const r = await get(baseA, "/api/weather/hong-kong");
+    assert("available" in r, "no availability flag");
+    assert(r.available || r.error, "must explain unavailability");
+    return r.available ? `${r.temperature_c}C` : "unavailable (honest)";
+  });
+  await check("chat new + send (real intent reply, no fake AI)", async () => {
+    const ns = await post(baseA, "/api/chat/session/new", { agent: "tfnk" });
+    const m = await post(baseA, "/api/chat/message", { session_id: ns.session.session_id, text: "audit fake ui" });
+    assert(m.reply.role === "tfnk" && m.reply.intent.task_type, "no real reply");
+    assert(/no.*LLM|fabricated/i.test(m.reply.honest_note), "not honest about no LLM");
+    return `intent=${m.reply.intent.task_type}`;
+  });
+  await check("HUD animation toggle persists", async () => {
+    const a = (await post(baseA, "/api/hud/animation/toggle", {})).animation;
+    const b = (await get(baseA, "/api/hud/state")).hud.animation;
+    assert(a === b, "toggle not persisted");
+    return `animation=${b}`;
+  });
+
   // ---- Test Center: run the real unit suite as a child process ----
   if (process.env.SMOKE_SKIP_TESTS !== "1") {
     await check("Test Center runs the real unit suite", async () => {

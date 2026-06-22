@@ -3,7 +3,7 @@
 // each one against the action registry, the UI control map and the live API
 // routes. Produces a structured report classifying every element.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "../lib/store.js";
 import { loadActions, loadUiMap, routeExists } from "../lib/registry.js";
@@ -51,14 +51,22 @@ export function audit() {
     for (const el of screen.elements) mapByElement.set(el.id, el);
   }
 
-  let html = "";
-  const file = "frontend/index.html";
+  // Scan every HTML file under frontend/ so multi-page UIs (e.g. the HUD) are
+  // held to the same no-fake-UI standard.
+  let htmlFiles = [];
   try {
-    html = readFileSync(join(ROOT, "frontend", "index.html"), "utf8");
+    htmlFiles = readdirSync(join(ROOT, "frontend")).filter((f) => f.endsWith(".html"));
   } catch {
-    html = "";
+    htmlFiles = [];
   }
-  const found = scanHtml(html, file);
+  const found = [];
+  for (const f of htmlFiles) {
+    try {
+      found.push(...scanHtml(readFileSync(join(ROOT, "frontend", f), "utf8"), `frontend/${f}`));
+    } catch {
+      /* skip unreadable file */
+    }
+  }
 
   const items = [];
   for (const el of found) {

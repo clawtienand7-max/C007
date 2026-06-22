@@ -45,6 +45,19 @@
         { "id": "btn_self_rollback", "type": "button", "label": "Rollback Self Upgrade", "action_id": "self.upgrade.rollback" },
         { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
       ]
+    },
+    {
+      "screen": "OmHudInterface",
+      "elements": [
+        { "id": "btn_hud_anim", "type": "button", "label": "Toggle HUD Animation", "action_id": "hud.toggle_animation" },
+        { "id": "btn_hud_telemetry", "type": "button", "label": "Refresh Telemetry", "action_id": "hud.telemetry.refresh" },
+        { "id": "btn_hud_omgraph", "type": "button", "label": "Load OM Relation Graph", "action_id": "om.graph.load" },
+        { "id": "btn_hud_weather", "type": "button", "label": "Refresh Hong Kong Weather", "action_id": "weather.hk.refresh" },
+        { "id": "btn_hud_newchat", "type": "button", "label": "New Chat", "action_id": "chat.new" },
+        { "id": "btn_hud_send", "type": "button", "label": "Send Chat Message", "action_id": "chat.message.send" },
+        { "id": "btn_hud_savelayout", "type": "button", "label": "Save HUD Layout", "action_id": "hud.layout.save" },
+        { "id": "btn_estop", "type": "button", "label": "Emergency Stop", "action_id": "emergency.stop" }
+      ]
     }
   ]
 }

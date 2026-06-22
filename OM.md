@@ -4,8 +4,8 @@
 > proven to work.** Updated as the system is built. Last updated: **2026-06-22**.
 
 This document is the operating memory for TFNK Agent OS. It consolidates every
-build (Phases 1–3, V0.4, V0.5, V0.7), the full API surface, the safety model,
-the honesty boundaries, and the latest real-world verification results.
+build (Phases 1–3, V0.4, V0.5, V0.7, V0.8), the full API surface, the safety
+model, the honesty boundaries, and the latest real-world verification results.
 
 ---
 
@@ -28,11 +28,11 @@ never pretended. Risky actions are **permission-gated**, not auto-executed.
 
 | Metric | Value |
 | --- | --- |
-| Version | **0.7.0** |
-| Unit tests (`npm test`) | **70 / 70 passing** |
-| Real-world smoke (`npm run smoke`) | **42 / 42 checks passed** |
-| UI audit (`npm run audit`) | **0 genuine problems** (37 connected, ~16 client-only, 1 declared-pending) |
-| Registered actions | 39 |
+| Version | **0.8.0** |
+| Unit tests (`npm test`) | **85 / 85 passing** |
+| Real-world smoke (`npm run smoke`) | **48 / 48 checks passed** |
+| UI audit (`npm run audit`) | **0 genuine problems** (45 connected, ~20 client-only, 1 declared-pending; scans all frontend HTML) |
+| Registered actions | 46 |
 | Dependencies | **0** (Node ≥ 20 built-ins only) |
 | CI | GitHub Actions runs suite + audit on Node 20 & 22 |
 
@@ -83,6 +83,20 @@ install permission-gated, not executed here) · Self-Upgrade Orchestrator
 (delegate=high, apply/rollback=critical; all gated; `apply` records
 `applied_pending_merge` and **never auto-rewrites TFNK source**).
 
+### V0.8 — OM HUD Command Interface
+Dark sci-fi HUD at **`/hud`**: top operation bar · central concentric **rotating
+rings** (clockwise/counter-clockwise/pulse, reduced-motion aware) · **OM Relation
+Graph** core (built from real subsystems/counts) · left telemetry dock · right
+weather + chat dock · **frameless transparent conversation table** (Enter to
+send). Real data only:
+- **Telemetry** — CPU%/RAM from Node `os`; GPU (`nvidia-smi`), disk (`df`),
+  network throughput report `available:false` honestly when not measurable.
+- **HK weather** — HKO Open Data (rhrread); `available:false` + reason if no network.
+- **Chat** — sessions/messages persisted; reply is the real Intent Classifier
+  with an honest note that no LLM is connected (no fabricated AI answers).
+- The UI Audit Agent now scans **all** frontend HTML files, so the HUD page is
+  held to the same no-fake-UI standard.
+
 ### Declared-pending (honestly disabled)
 - **Phase 4** — Workflow Canvas (`workflow.run`, `implemented:false`)
 - **Phase 5** — Engineering agent (issue→branch→edit→test→PR→rollback)
@@ -102,6 +116,9 @@ human**, never faking them:
 | Web / GitHub research fetch | `honest_status: blocked` (no_network); **scoring is real** | inject a fetcher / run with network |
 | Sandbox install of a package | statically inspected + permission-gated; **not executed** | external networked sandbox runner |
 | `self.upgrade.apply` | records `applied_pending_merge` + rollback plan | merge the verified branch via PR/CI |
+| GPU / disk / net-throughput telemetry | `available:false` + reason when unmeasurable | `nvidia-smi` / `df` / a metrics agent on a real host |
+| HK weather | HKO fetch; `unavailable` if no network | run with network access |
+| Chat AI reply | real Intent Classifier + honest "no LLM" note | wire an LLM/agent backend |
 
 ---
 
@@ -119,6 +136,7 @@ human**, never faking them:
 **Scheduler:** `POST/GET /api/scheduler/tasks` · `POST /api/scheduler/tasks/run-now|enable|disable|delete` · `GET /api/scheduler/runs|run`
 **Contracts/Delivery:** `POST/GET /api/contracts` · `POST /api/contracts/codex-prompt|claude-prompt` · `POST /api/deliveries/intake|verify|accept|reject|request-repair` · `GET /api/deliveries` · `POST /api/real-usage/run`
 **Self-extension:** `POST /api/self/gaps/detect` · `POST/GET /api/self/gaps` · `POST /api/self/research/run` · `/api/self/github/search|evaluate-repo` · `POST/GET /api/self/skills*` · `POST /api/self/sandbox/create|inspect|install|audit|destroy` · `POST/GET /api/self/upgrade/proposal|proposals` · `POST /api/self/upgrade/delegate|verify|request-approval|apply|rollback`
+**HUD (V0.8):** `GET /api/hud/state|layout` · `POST /api/hud/animation/toggle|theme/update|layout/save` · `GET /api/telemetry/system|gpu|network|disk` · `POST /api/telemetry/refresh` · `GET /api/om/graph|om/graph/node|om/memory/recent` · `GET /api/weather/hong-kong[/rainfall|/alerts]` · `GET /api/chat/sessions|session` · `POST /api/chat/session/new|message|session/pin-to-hud`
 
 ---
 
@@ -139,15 +157,15 @@ Gestures, cross-device delegation, and self-upgrade all resolve through the
 ## 6. How to run & verify
 
 ```bash
-npm start        # http://localhost:4007 — full UI (all centers/tabs)
-npm test         # 70 unit tests
-npm run smoke    # 42 real-world end-to-end checks (boots the app)
-npm run audit    # no-fake-UI report (exits non-zero on genuine problems)
+npm start        # http://localhost:4007 — Command Center; OM HUD at /hud
+npm test         # 85 unit tests
+npm run smoke    # 48 real-world end-to-end checks (boots the app)
+npm run audit    # no-fake-UI report (scans all frontend HTML; non-zero on problems)
 ```
 
 ---
 
-## 7. Latest real-world smoke result (2026-06-22) — 42/42 PASS
+## 7. Latest real-world smoke result (2026-06-22) — 48/48 PASS
 
 Foundation: health · actions · ui-control-map · audit(0 problems) · session ·
 plan · step-run · verify(rejects no-evidence) · repair · autonomous-run ·
@@ -160,8 +178,10 @@ Vision: rtsp honestly unavailable · replay readable · **gesture pipeline
 V0.5: scheduler create+run-now · contract · delivery intake/verify+accept ·
 hardcode-diff rejected · real-usage runner.
 V0.7: gap detect · research honest-blocked · scout scoring · sandbox gated ·
-proposal+gated-delegate · **apply never auto-rewrites source** ·
-Test Center → **pass 70/70**.
+proposal+gated-delegate · **apply never auto-rewrites source**.
+V0.8: HUD page served · **real CPU/RAM telemetry (GPU honestly unavailable)** ·
+OM graph core · **HK weather never fabricated** · chat real-intent reply (no fake
+AI) · animation toggle persists · Test Center → **pass 85/85**.
 
 ---
 

@@ -64,10 +64,10 @@ test("test_hk_weather_refresh + test_weather_api_error_state: never fabricated",
   else assert.ok("temperature_c" in r);
 });
 
-test("weather module is honest with no fetcher injected", async () => {
-  const r = await getHongKongWeather({ fetchImpl: null });
+test("weather module is honest when the fetch fails (deterministic, no network needed)", async () => {
+  const r = await getHongKongWeather({ fetchImpl: async () => { throw new Error("network down"); } });
   assert.equal(r.available, false);
-  assert.ok(r.error);
+  assert.ok(r.error, "must explain why unavailable");
 });
 
 test("test_chat_new: new chat session via real API", async () => {

@@ -1,0 +1,160 @@
+{
+  "version": "0.3.0",
+  "description": "Canonical registry of every operable action in TFNK Agent OS. A UI element is only allowed to present itself as a real feature if its action_id appears here AND implemented === true AND the referenced api route is live.",
+  "actions": [
+    {
+      "id": "loop.start",
+      "label": "Start LOOP",
+      "ui_element": "btn_start_loop",
+      "api": "/api/loop/run",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_loop_start",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "loop.stop",
+      "label": "Stop LOOP",
+      "ui_element": "btn_stop_loop",
+      "api": "/api/loop/stop",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_loop_stop",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "loop.status",
+      "label": "Refresh LOOP status",
+      "ui_element": "btn_loop_status",
+      "api": "/api/loop/status",
+      "method": "GET",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_loop_status",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "emergency.stop",
+      "label": "EMERGENCY STOP",
+      "ui_element": "btn_emergency_stop",
+      "api": "/api/emergency-stop",
+      "method": "POST",
+      "risk": "high",
+      "implemented": true,
+      "test_id": "test_emergency_stop",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "agent.session.create",
+      "label": "New Agent Session",
+      "ui_element": "btn_new_session",
+      "api": "/api/agent/session",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_agent_session",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "agent.plan",
+      "label": "Generate Plan",
+      "ui_element": "btn_generate_plan",
+      "api": "/api/agent/plan",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_agent_plan",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "agent.step.run",
+      "label": "Run Step",
+      "ui_element": "btn_run_step",
+      "api": "/api/agent/step/run",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_step_run",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "agent.verify",
+      "label": "Verify",
+      "ui_element": "btn_verify",
+      "api": "/api/agent/verify",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_verify",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "agent.repair",
+      "label": "Auto Repair",
+      "ui_element": "btn_auto_repair",
+      "api": "/api/agent/repair",
+      "method": "POST",
+      "risk": "high",
+      "implemented": true,
+      "test_id": "test_repair",
+      "fallback": "request_permission"
+    },
+    {
+      "id": "ui.audit",
+      "label": "Audit UI",
+      "ui_element": "btn_ui_audit",
+      "api": "/api/agent/audit",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_ui_audit",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "tests.run",
+      "label": "Run Tests",
+      "ui_element": "btn_run_tests",
+      "api": "/api/tests/run",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_tests_run",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "permission.decide",
+      "label": "Approve / Deny",
+      "ui_element": "btn_permission_decide",
+      "api": "/api/permissions/decide",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_permission_decide",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "computer.screenshot",
+      "label": "Screenshot (Phase 3)",
+      "ui_element": "btn_screenshot",
+      "api": "/api/computer/screenshot",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": false,
+      "test_id": null,
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "workflow.run",
+      "label": "Run Workflow (Phase 4)",
+      "ui_element": "btn_run_workflow",
+      "api": "/api/workflows/run",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": false,
+      "test_id": null,
+      "fallback": "show_error_and_disable_button"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.3.0",
+  "description": "Declares every interactive element rendered by the frontend and which registry action it is bound to. The UI Audit Agent reconciles this map against the live DOM and the action registry; mismatches are reported as fake_or_unmapped.",
+  "screens": [
+    {
+      "screen": "AgentCommandCenter",
+      "elements": [
+        { "id": "btn_new_session", "type": "button", "label": "New Agent Session", "action_id": "agent.session.create" },
+        { "id": "btn_generate_plan", "type": "button", "label": "Generate Plan", "action_id": "agent.plan" },
+        { "id": "btn_run_step", "type": "button", "label": "Run Step", "action_id": "agent.step.run" },
+        { "id": "btn_verify", "type": "button", "label": "Verify", "action_id": "agent.verify" },
+        { "id": "btn_auto_repair", "type": "button", "label": "Auto Repair", "action_id": "agent.repair" },
+        { "id": "btn_ui_audit", "type": "button", "label": "Audit UI", "action_id": "ui.audit" },
+        { "id": "btn_start_loop", "type": "button", "label": "Start LOOP", "action_id": "loop.start" },
+        { "id": "btn_stop_loop", "type": "button", "label": "Stop LOOP", "action_id": "loop.stop" },
+        { "id": "btn_loop_status", "type": "button", "label": "Refresh LOOP status", "action_id": "loop.status" },
+        { "id": "btn_emergency_stop", "type": "button", "label": "EMERGENCY STOP", "action_id": "emergency.stop" },
+        { "id": "btn_run_tests", "type": "button", "label": "Run Tests", "action_id": "tests.run" },
+        { "id": "btn_permission_decide", "type": "button", "label": "Approve / Deny", "action_id": "permission.decide" },
+        { "id": "btn_screenshot", "type": "button", "label": "Screenshot (Phase 3)", "action_id": "computer.screenshot" },
+        { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
+      ]
+    }
+  ]
+}

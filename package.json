@@ -1,0 +1,16 @@
+{
+  "name": "tfnk-agent-os",
+  "version": "0.3.0",
+  "description": "TFNK Agent OS — a verifiable, controllable, repairable computer-agent foundation. No fake UI: every button maps to a registered action, every action to a real API, every API to a test.",
+  "type": "module",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "node --test",
+    "audit": "node backend/cli/audit.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

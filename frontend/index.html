@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TFNK Agent OS</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">TFNK <span>Agent OS</span> <em>v0.3</em></div>
+      <div class="status-pills">
+        <span id="pill_health" class="pill">backend ●</span>
+        <span id="pill_loop" class="pill">loop: idle</span>
+        <span class="pill safe">Safe Mode</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- Sidebar: Agent Command Center -->
+      <section class="panel sidebar">
+        <h2>Command Center</h2>
+
+        <div class="group">
+          <label for="goal_input">Task goal</label>
+          <textarea id="goal_input" rows="3" placeholder="e.g. Audit and repair fake UI in TFNK"></textarea>
+          <button id="btn_new_session" data-action="agent.session.create" data-label="New Agent Session">New Agent Session</button>
+          <button id="btn_generate_plan" data-action="agent.plan" data-label="Generate Plan">Generate Plan</button>
+          <button id="btn_run_step" data-action="agent.step.run" data-label="Run Step">Run Next Step</button>
+          <button id="btn_verify" data-action="agent.verify" data-label="Verify">Verify</button>
+        </div>
+
+        <div class="group">
+          <h3>Audit &amp; Repair</h3>
+          <button id="btn_ui_audit" data-action="ui.audit" data-label="Audit UI">Audit UI</button>
+          <button id="btn_auto_repair" data-action="agent.repair" data-label="Auto Repair">Auto Repair</button>
+        </div>
+
+        <div class="group">
+          <h3>LOOP</h3>
+          <button id="btn_start_loop" data-action="loop.start" data-label="Start LOOP">Start LOOP</button>
+          <button id="btn_stop_loop" data-action="loop.stop" data-label="Stop LOOP">Stop LOOP</button>
+          <button id="btn_loop_status" data-action="loop.status" data-label="Refresh LOOP status">Refresh Status</button>
+        </div>
+
+        <div class="group">
+          <h3>Test Center</h3>
+          <button id="btn_run_tests" data-action="tests.run" data-label="Run Tests">Run Tests</button>
+        </div>
+
+        <div class="group">
+          <h3>Future Phases</h3>
+          <button id="btn_screenshot" data-action="computer.screenshot" data-label="Screenshot (Phase 3)">Screenshot (Phase 3)</button>
+          <button id="btn_run_workflow" data-action="workflow.run" data-label="Run Workflow (Phase 4)">Run Workflow (Phase 4)</button>
+        </div>
+
+        <div class="group danger">
+          <button id="btn_emergency_stop" data-action="emergency.stop" data-label="EMERGENCY STOP">■ EMERGENCY STOP</button>
+        </div>
+      </section>
+
+      <!-- Main workspace -->
+      <section class="panel workspace">
+        <div class="tabs">
+          <button class="tab active" data-tab="timeline" data-client="true">Task Timeline</button>
+          <button class="tab" data-tab="audit" data-client="true">Action Inspector</button>
+          <button class="tab" data-tab="tests" data-client="true">Test Center</button>
+          <button class="tab" data-tab="permissions" data-client="true">Permission Queue</button>
+        </div>
+
+        <div id="tab_timeline" class="tabpane active">
+          <h3>Agent Mind &amp; Timeline</h3>
+          <div id="agent_mind" class="mind">Idle. Create a session to begin.</div>
+          <ol id="timeline" class="timeline"></ol>
+        </div>
+
+        <div id="tab_audit" class="tabpane">
+          <h3>Action Inspector</h3>
+          <p class="hint">Every interactive control reconciled against the action registry, UI control map and live API routes.</p>
+          <div id="audit_summary" class="summary"></div>
+          <table class="data" id="audit_table">
+            <thead><tr><th>UI id</th><th>Action</th><th>Status</th><th>Reason</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div id="tab_tests" class="tabpane">
+          <h3>Test Center</h3>
+          <div id="tests_summary" class="summary"></div>
+          <pre id="tests_output" class="logbox"></pre>
+        </div>
+
+        <div id="tab_permissions" class="tabpane">
+          <h3>Permission Queue</h3>
+          <p class="hint">High / critical risk actions wait here for your approval.</p>
+          <div id="permissions_list"></div>
+        </div>
+      </section>
+
+      <!-- Right dock -->
+      <section class="panel dock">
+        <h2>Trace Viewer</h2>
+        <button id="btn_refresh_logs" class="mini" data-client="true">Refresh logs</button>
+        <div id="logs" class="logbox small"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

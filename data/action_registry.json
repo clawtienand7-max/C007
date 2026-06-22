@@ -267,6 +267,83 @@
       "fallback": "show_error_and_disable_button"
     },
     {
+      "id": "contract.create",
+      "label": "Create Requirement Contract",
+      "ui_element": "btn_contract_create",
+      "api": "/api/contracts",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_contract_create",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "scheduler.task.create",
+      "label": "Create Scheduled Task",
+      "ui_element": "btn_sched_create",
+      "api": "/api/scheduler/tasks",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_scheduler_task_create",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "scheduler.task.run_now",
+      "label": "Run Scheduled Task Now",
+      "ui_element": "btn_sched_run_now",
+      "api": "/api/scheduler/tasks/run-now",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_scheduler_run_now",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "delivery.intake",
+      "label": "Intake External Agent Delivery",
+      "ui_element": "btn_delivery_intake",
+      "api": "/api/deliveries/intake",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_delivery_intake",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "delivery.verify",
+      "label": "Verify Delivery",
+      "ui_element": "btn_delivery_verify",
+      "api": "/api/deliveries/verify",
+      "method": "POST",
+      "risk": "high",
+      "implemented": true,
+      "test_id": "test_delivery_verify",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "delivery.accept",
+      "label": "Accept Delivery",
+      "ui_element": "btn_delivery_accept",
+      "api": "/api/deliveries/accept",
+      "method": "POST",
+      "risk": "high",
+      "implemented": true,
+      "test_id": "test_delivery_accept",
+      "fallback": "request_permission"
+    },
+    {
+      "id": "real_usage.run",
+      "label": "Run Real Usage Scenario",
+      "ui_element": "btn_real_usage",
+      "api": "/api/real-usage/run",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_real_usage_run",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
       "id": "workflow.run",
       "label": "Run Workflow (Phase 4)",
       "ui_element": "btn_run_workflow",

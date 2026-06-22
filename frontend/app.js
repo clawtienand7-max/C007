@@ -62,6 +62,8 @@ async function bootstrap() {
   loadDevices();
   loadGestures();
   loadVision();
+  loadScheduler();
+  loadDelivery();
   subscribeEvents();
 }
 
@@ -248,6 +250,70 @@ const handlers = {
     switchTab("vision");
     toast("Gesture map reloaded");
   },
+  "scheduler.task.create": async () => {
+    const name = $("#sched_name_input").value.trim() || "每日 TFNK 健康檢查";
+    const { data } = await api("/api/scheduler/tasks", { method: "POST", body: { name, task_type: "health_check", schedule_type: "interval", interval_seconds: 3600, risk_level: "low" } });
+    state.schedTaskId = data.task.id;
+    addTimeline("Scheduled task created", `${data.task.name} • next ${data.task.next_run_at || "—"}`);
+    switchTab("scheduler");
+    loadScheduler();
+    toast("Task created");
+  },
+  "scheduler.task.run_now": async () => {
+    if (!state.schedTaskId) return toast("Create a task first");
+    const { data } = await api("/api/scheduler/tasks/run-now", { method: "POST", body: { id: state.schedTaskId } });
+    addTimeline("Run now", `${data.run.status} • verify ${data.run.verification_result}`, data.run.verification_result === "passed" ? "passed" : "");
+    loadScheduler();
+    toast(`Run: ${data.run.status}`);
+  },
+  "contract.create": async () => {
+    const { data } = await api("/api/contracts", { method: "POST", body: {
+      user_goal: "讓 TFNK 可每日自動健康檢查並在 UI 查看結果",
+      must_have: ["可建立 scheduled task", "可 Run Now", "task_run 記錄產生", "UI 顯示 status"],
+      real_usage_scenario: [{ type: "api", action: "GET /api/health", expect: { status_code: 200, body_contains: ["ok"] } }],
+      risk_level: "medium",
+    } });
+    state.contractId = data.contract.requirement_id;
+    addTimeline("Requirement contract created", data.contract.requirement_id);
+    toast("Contract created");
+  },
+  "delivery.intake": async () => {
+    if (!state.contractId) await handlers["contract.create"]();
+    const { data } = await api("/api/deliveries/intake", { method: "POST", body: {
+      source_agent: "codex", source_type: "pr", requirement_id: state.contractId,
+      branch: "codex/demo", changed_files: ["backend/lib/scheduler.js", "frontend/app.js"],
+      report: "可建立 scheduled task、可 Run Now、task_run 記錄產生、UI 顯示 status",
+    } });
+    state.deliveryId = data.delivery_id;
+    addTimeline("Delivery intake", `${data.delivery_id} from ${data.source_agent}`);
+    switchTab("delivery");
+    loadDelivery();
+    toast("Delivery received");
+  },
+  "delivery.verify": async () => {
+    if (!state.deliveryId) return toast("Intake a delivery first");
+    toast("Verifying (running real tests)…");
+    const data = await api("/api/deliveries/verify", { method: "POST", body: { id: state.deliveryId } }).then((r) => r.data);
+    addTimeline(`Delivery verify: ${data.passed ? "PASSED" : "NOT ACCEPTED"}`, `rec=${data.recommendation} • real_usage=${data.real_usage_result}`, data.passed ? "passed" : "failed");
+    loadDelivery();
+    toast(data.recommendation);
+  },
+  "delivery.accept": async () => {
+    if (!state.deliveryId) return toast("Intake a delivery first");
+    const data = await api("/api/deliveries/accept", { method: "POST", body: { id: state.deliveryId } }).then((r) => r.data);
+    if (data.error) return toast(data.error);
+    addTimeline("Delivery accepted", state.deliveryId, "passed");
+    loadDelivery();
+    toast("Accepted");
+  },
+  "real_usage.run": async () => {
+    const data = await api("/api/real-usage/run", { method: "POST", body: { scenario: { scenario_id: "demo", steps: [
+      { type: "api", action: "GET /api/health", expect: { status_code: 200, body_contains: ["ok"] } },
+      { type: "api", action: "GET /api/scheduler/runs", expect: { status_code: 200 } },
+    ] } } }).then((r) => r.data);
+    addTimeline(`Real usage: ${data.result.status}`, `usable=${data.result.usable_for_real_work}`, data.result.status === "passed" ? "passed" : "failed");
+    toast(`Real usage: ${data.result.status}`);
+  },
   "tests.run": async () => {
     switchTab("tests");
     $("#tests_summary").innerHTML = `<div class="stat"><b>…</b><span>running real test suite</span></div>`;
@@ -352,6 +418,38 @@ async function loadVision() {
     .reverse()
     .map((e) => `${e.gesture_id} → ${e.action_id || "—"} | ${e.executed ? "executed" : "not-exec"} | ${e.verification_result}`)
     .join("\n") || "(no gesture decisions yet)";
+}
+
+async function loadScheduler() {
+  const tasks = await api("/api/scheduler/tasks").then((r) => r.data.tasks || []);
+  const tt = $("#sched_tasks_table tbody");
+  tt.innerHTML = tasks
+    .map((t) => `<tr><td>${t.name}</td><td>${t.task_type}</td><td>${t.schedule_type}${t.interval_seconds ? " " + t.interval_seconds + "s" : ""}${t.cron_expr ? " " + t.cron_expr : ""}</td><td>${t.next_run_at || "—"}</td><td>${t.last_run_at || "—"}</td><td>${t.enabled ? "✓" : "✕"}</td></tr>`)
+    .join("") || `<tr><td colspan="6" class="hint">No scheduled tasks yet.</td></tr>`;
+  const runs = await api("/api/scheduler/runs").then((r) => r.data.runs || []);
+  const rt = $("#sched_runs_table tbody");
+  rt.innerHTML = runs
+    .map((r) => `<tr><td>${r.id}</td><td>${r.scheduled_task_id}</td><td><span class="badge ${r.status === "completed" ? "connected" : r.status === "pending_approval" ? "permission_required" : "fake_or_unmapped"}">${r.status}</span></td><td>${r.verification_result || "—"}</td><td>${r.finished_at ? r.finished_at.slice(11, 19) : "—"}</td></tr>`)
+    .join("") || `<tr><td colspan="5" class="hint">No runs yet.</td></tr>`;
+}
+
+async function loadDelivery() {
+  const list = await api("/api/deliveries").then((r) => r.data.deliveries || []);
+  const box = $("#delivery_list");
+  if (!list.length) {
+    box.innerHTML = `<p class="hint">No deliveries yet. Intake a Codex/Claude delivery to begin verification.</p>`;
+    return;
+  }
+  box.innerHTML = list
+    .map((d) => {
+      const v = d.verification;
+      const checks = v ? v.checks.map((c) => `<div class="hint">${c.status === "passed" ? "✅" : c.status === "failed" ? "❌" : "⏳"} ${c.name}: ${c.status}</div>`).join("") : `<div class="hint">not verified yet</div>`;
+      return `<div class="perm" style="border-color:var(--border)"><b>${d.delivery_id}</b> <span class="badge ${d.status.includes("accept") || d.status === "verified" ? "connected" : d.status === "rejected" ? "fake_or_unmapped" : "backend_missing"}">${d.status}</span>
+        <div class="hint">source: ${d.source_agent} · ${d.source_type} · req: ${d.requirement_contract_id || "—"}</div>
+        ${checks}
+        ${v ? `<div class="hint">recommendation: <b>${v.recommendation}</b>${v.human_approval_required ? " · human approval required" : ""}</div>` : ""}</div>`;
+    })
+    .join("");
 }
 
 async function loadPermissions() {

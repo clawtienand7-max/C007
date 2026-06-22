@@ -86,6 +86,26 @@ export const LIVE_ROUTES = new Set([
   "POST /api/gestures/enable",
   "POST /api/gestures/disable",
   "GET /api/events/recent",
+  // V0.5 — scheduler + delivery verification + real usage
+  "POST /api/scheduler/tasks",
+  "GET /api/scheduler/tasks",
+  "POST /api/scheduler/tasks/run-now",
+  "POST /api/scheduler/tasks/enable",
+  "POST /api/scheduler/tasks/disable",
+  "POST /api/scheduler/tasks/delete",
+  "GET /api/scheduler/runs",
+  "GET /api/scheduler/run",
+  "POST /api/contracts",
+  "GET /api/contracts",
+  "POST /api/contracts/codex-prompt",
+  "POST /api/contracts/claude-prompt",
+  "POST /api/deliveries/intake",
+  "GET /api/deliveries",
+  "POST /api/deliveries/verify",
+  "POST /api/deliveries/accept",
+  "POST /api/deliveries/reject",
+  "POST /api/deliveries/request-repair",
+  "POST /api/real-usage/run",
 ]);
 
 export function routeExists(method, api) {

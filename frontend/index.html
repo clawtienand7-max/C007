@@ -80,6 +80,22 @@
         </div>
 
         <div class="group">
+          <h3>Scheduler (V0.5)</h3>
+          <input id="sched_name_input" placeholder="task name" data-client="true" />
+          <button id="btn_sched_create" data-action="scheduler.task.create" data-label="Create Scheduled Task">+ New Health-Check Task</button>
+          <button id="btn_sched_run_now" data-action="scheduler.task.run_now" data-label="Run Scheduled Task Now">Run Selected Now</button>
+        </div>
+
+        <div class="group">
+          <h3>Delivery Acceptance (V0.5)</h3>
+          <button id="btn_contract_create" data-action="contract.create" data-label="Create Requirement Contract">New Requirement Contract</button>
+          <button id="btn_delivery_intake" data-action="delivery.intake" data-label="Intake External Agent Delivery">Intake Delivery</button>
+          <button id="btn_delivery_verify" data-action="delivery.verify" data-label="Verify Delivery">Verify Delivery</button>
+          <button id="btn_delivery_accept" data-action="delivery.accept" data-label="Accept Delivery">Accept Delivery</button>
+          <button id="btn_real_usage" data-action="real_usage.run" data-label="Run Real Usage Scenario">Run Real Usage</button>
+        </div>
+
+        <div class="group">
           <h3>Future Phases</h3>
           <button id="btn_run_workflow" data-action="workflow.run" data-label="Run Workflow (Phase 4)">Run Workflow (Phase 4)</button>
         </div>
@@ -99,6 +115,8 @@
           <button class="tab" data-tab="memory" data-client="true">Memory Center</button>
           <button class="tab" data-tab="devices" data-client="true">Devices</button>
           <button class="tab" data-tab="vision" data-client="true">Vision Control</button>
+          <button class="tab" data-tab="scheduler" data-client="true">Scheduler</button>
+          <button class="tab" data-tab="delivery" data-client="true">Delivery Acceptance</button>
           <button class="tab" data-tab="permissions" data-client="true">Permission Queue</button>
         </div>
 
@@ -158,6 +176,27 @@
           </table>
           <h4>Gesture timeline</h4>
           <div id="gesture_timeline" class="logbox small"></div>
+        </div>
+
+        <div id="tab_scheduler" class="tabpane">
+          <h3>Scheduler Center</h3>
+          <p class="hint">Define recurring/one-time tasks. Run-now executes immediately; unattended high-risk tasks park as <code>pending_approval</code>. Every run writes a real task_run record.</p>
+          <h4>Tasks</h4>
+          <table class="data" id="sched_tasks_table">
+            <thead><tr><th>Name</th><th>Type</th><th>Schedule</th><th>Next run</th><th>Last run</th><th>Enabled</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <h4>Recent runs</h4>
+          <table class="data" id="sched_runs_table">
+            <thead><tr><th>Run</th><th>Task</th><th>Status</th><th>Verify</th><th>Finished</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div id="tab_delivery" class="tabpane">
+          <h3>Delivery Verification Center <span class="hint">TFNK is the final acceptance officer</span></h3>
+          <p class="hint">Codex / Claude deliveries are candidates until they pass: requirement match → diff safety → tests → UI/API audit → real usage. No evidence ⇒ not accepted.</p>
+          <div id="delivery_list"></div>
         </div>
 
         <div id="tab_permissions" class="tabpane">

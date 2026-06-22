@@ -1,4 +1,4 @@
-# TFNK Agent OS — V0.4 (Cross-Device Vision Agent Build)
+# TFNK Agent OS — V0.5 (Scheduled Delivery Verification Build)
 
 > A **verifiable, controllable, repairable** computer-agent foundation.
 > Not a chatbot with decorative buttons. The iron rule of this codebase:
@@ -6,9 +6,9 @@
 > **Every button → a registered action → a real API → a real test → a trace.**
 
 This implements the *TFNK Agent vNext+* blueprint (Phases 1–3) plus the *V0.4
-Cross-Device Vision Agent* build. It is fully runnable today with **zero external
-dependencies** (Node ≥ 20 only — no `npm install` required) so it works in
-restricted/offline environments.
+Cross-Device Vision Agent* and *V0.5 Scheduled Delivery Verification* builds. It is
+fully runnable today with **zero external dependencies** (Node ≥ 20 only — no
+`npm install` required) so it works in restricted/offline environments.
 
 ---
 
@@ -41,6 +41,12 @@ restricted/offline environments.
 | **Gesture mappings + Action Mapper** (safety-gated) | ✅ V0.4 | `backend/lib/gestures.js` |
 | **Vision Engine** (smoothing → cooldown → risk → permission → verify) | ✅ V0.4 | `backend/agents/vision.js` |
 | **Vision Control Center + Devices UI** | ✅ V0.4 | `frontend/` |
+| **Scheduler Service** (once / interval / cron + runs + retries) | ✅ V0.5 | `backend/lib/scheduler.js` |
+| **Requirement Contracts** (acceptance standard) | ✅ V0.5 | `backend/lib/contracts.js` |
+| **Delivery Verification** (Codex/Claude acceptance officer) | ✅ V0.5 | `backend/agents/delivery.js` |
+| **Real Usage Runner** (proves a feature is usable) | ✅ V0.5 | `backend/agents/realUsage.js` |
+| **Codex/Claude prompt + repair generators** | ✅ V0.5 | `backend/agents/promptGen.js` |
+| **Scheduler + Delivery Acceptance UI** | ✅ V0.5 | `frontend/` |
 | Live USB/RTSP/RTMP/HDMI capture + MediaPipe model | 🔌 pluggable (external worker via `/api/vision/ingest`) | honest capability detection |
 | Workflow Canvas | ⏳ Phase 4 (declared, disabled) | registry `implemented:false` |
 
@@ -70,7 +76,7 @@ real camera/RTSP stream here — and the project's iron rule forbids faking. So:
 
 ```bash
 npm start            # serve UI + API on http://localhost:4007
-npm test             # run the real test suite (46 tests)
+npm test             # run the real test suite (57 tests)
 npm run audit        # run the UI Audit Agent from the CLI
 ```
 
@@ -99,7 +105,7 @@ The audit distinguishes three honest non-problems from genuine fakes:
 broken`) fail the audit and CI.
 
 Run `npm run audit` to see the live report. Current build:
-**23 connected, 12 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
+**30 connected, ~15 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
 
 ---
 
@@ -170,6 +176,20 @@ Hard rules baked into code:
 | GET | `/api/gestures` · POST `/api/gestures/map` `/test` `/enable` `/disable` | gesture→action mappings |
 | GET | `/api/events` (SSE) · `/api/events/recent` | live event stream |
 
+### V0.5 — scheduler + delivery acceptance
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST/GET | `/api/scheduler/tasks` | create / list scheduled tasks |
+| POST | `/api/scheduler/tasks/run-now` · `/enable` · `/disable` · `/delete` | manage a task |
+| GET | `/api/scheduler/runs` · `/api/scheduler/run` | task run records |
+| POST/GET | `/api/contracts` | create / list requirement contracts |
+| POST | `/api/contracts/codex-prompt` · `/claude-prompt` | generate delegation prompts |
+| POST | `/api/deliveries/intake` | receive a Codex/Claude/manual delivery |
+| POST | `/api/deliveries/verify` | run the acceptance pipeline (real tests + usage) |
+| POST | `/api/deliveries/accept` · `/reject` · `/request-repair` | acceptance decision |
+| POST | `/api/real-usage/run` | execute a real-usage scenario |
+
 ---
 
 ## Architecture
@@ -194,20 +214,25 @@ backend/
     crossDevice.js     Cross Device Agent — node select + delegation [V0.4]
     cameraAdapter.js   Camera Adapter Layer (capability detection + replay) [V0.4]
     vision.js          Vision Engine — gesture safety pipeline [V0.4]
+    realUsage.js       Real Usage Runner [V0.5]
+    delivery.js        Delivery Verification (acceptance officer) [V0.5]
+    promptGen.js       Codex/Claude prompt + repair generators [V0.5]
     testCenter.js      runs the real test suite as a child process
   lib/
     device.js          device identity + peers + pairing/trust [V0.4]
     discovery.js       UDP LAN discovery [V0.4]
     events.js          event bus (SSE + ring buffer) [V0.4]
     gestures.js        gesture mappings + Gesture Action Mapper [V0.4]
+    scheduler.js       Scheduler Service (once/interval/cron) [V0.5]
+    contracts.js       Requirement Contract store [V0.5]
   cli/audit.js         `npm run audit`
 data/
   action_registry.json action source of truth
   ui_control_map.json  UI→action bindings
   gesture_mappings.json gesture→action bindings [V0.4]
   samples/             gestures_demo.jsonl replay fixture [V0.4]
-frontend/              Agent Command Center + Vision Control + Devices
-test/                  api / agents / phase23 / v04 (.test.js) — 46 tests, all green
+frontend/              Command Center + Vision + Devices + Scheduler + Delivery
+test/                  api / agents / phase23 / v04 / v05 (.test.js) — 57 tests, all green
 .github/workflows/     ci.yml — runs the suite + audit on Node 20 & 22
 ```
 
@@ -217,8 +242,19 @@ test/                  api / agents / phase23 / v04 (.test.js) — 46 tests, all
 - **Phase 2** — ✅ Master Orchestrator (autonomous `agent.run` + Report Generator) and Memory Center.
 - **Phase 3** — ✅ Computer Use layer (screenshot / click / type / observe / verify), in-app virtual screen.
 - **V0.4** — ✅ Cross-device LAN collaboration (discovery / pairing / trust / delegation) + safe gesture control (camera adapters, gesture→action mapper, vision pipeline).
+- **V0.5** — ✅ Scheduler (once/interval/cron) + Requirement Contracts + Delivery Verification (TFNK as acceptance officer for Codex/Claude) + Real Usage Runner.
 - **Phase 4** — ⏳ Workflow Canvas (trigger / agent / tool / approval / retry nodes).
 - **Phase 5** — ⏳ Engineering agent (issue → branch → edit → test → PR → rollback).
+
+### V0.5 delivery-acceptance honesty boundary
+
+TFNK is the **final acceptance officer**: a Codex/Claude delivery is a *candidate*
+until it passes requirement-match → diff-safety → **real tests** → UI/API audit →
+**real usage**. This build can't fetch a live PR here, so a delivery is described
+to `/api/deliveries/intake` (changed files + diff + report); verification runs the
+**real** test suite and a **real** usage scenario and records evidence. Forbidden
+patterns (hardcode / fake success / skipped tests) in the diff force a `reject`;
+nothing is accepted without passing evidence.
 
 ### Computer Use scope & honesty
 

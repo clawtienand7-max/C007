@@ -29,6 +29,13 @@
         { "id": "btn_vision_start", "type": "button", "label": "Start Vision Recognition", "action_id": "vision.start" },
         { "id": "btn_vision_stop", "type": "button", "label": "Stop Vision Recognition", "action_id": "vision.stop" },
         { "id": "btn_gesture_map", "type": "button", "label": "Map Gesture to Action", "action_id": "gesture.map_action" },
+        { "id": "btn_contract_create", "type": "button", "label": "Create Requirement Contract", "action_id": "contract.create" },
+        { "id": "btn_sched_create", "type": "button", "label": "Create Scheduled Task", "action_id": "scheduler.task.create" },
+        { "id": "btn_sched_run_now", "type": "button", "label": "Run Scheduled Task Now", "action_id": "scheduler.task.run_now" },
+        { "id": "btn_delivery_intake", "type": "button", "label": "Intake External Agent Delivery", "action_id": "delivery.intake" },
+        { "id": "btn_delivery_verify", "type": "button", "label": "Verify Delivery", "action_id": "delivery.verify" },
+        { "id": "btn_delivery_accept", "type": "button", "label": "Accept Delivery", "action_id": "delivery.accept" },
+        { "id": "btn_real_usage", "type": "button", "label": "Run Real Usage Scenario", "action_id": "real_usage.run" },
         { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
       ]
     }

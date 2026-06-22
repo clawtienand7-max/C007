@@ -26,6 +26,12 @@ import * as camera from "./agents/cameraAdapter.js";
 import * as vision from "./agents/vision.js";
 import { listMappings, mapGesture, mapToAction, setEnabled } from "./lib/gestures.js";
 import { subscribe, recent as recentEvents } from "./lib/events.js";
+import * as scheduler from "./lib/scheduler.js";
+import { loadPersistedScheduler } from "./lib/scheduler.js";
+import { createContract, getContract, listContracts, loadPersistedContracts } from "./lib/contracts.js";
+import { codexPrompt, claudePrompt } from "./agents/promptGen.js";
+import * as delivery from "./agents/delivery.js";
+import { runScenario } from "./agents/realUsage.js";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -82,7 +88,7 @@ function route(method, path, handler) {
 }
 
 // --- meta -------------------------------------------------------------------
-route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.4.0", time: new Date().toISOString() }));
+route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.5.0", time: new Date().toISOString() }));
 
 route("GET", "/api/actions", () => {
   const reg = loadActions();
@@ -255,6 +261,62 @@ route("POST", "/api/gestures/disable", (body) => setEnabled(body.gesture_id, fal
 // --- events -----------------------------------------------------------------
 route("GET", "/api/events/recent", (_b, q) => ({ events: recentEvents({ since: Number(q.since) || 0, limit: Number(q.limit) || 100 }) }));
 
+// --- scheduler (V0.5) -------------------------------------------------------
+route("POST", "/api/scheduler/tasks", (body) => {
+  const t = scheduler.createTask(body);
+  return t.error ? { ...t, _status: 400 } : { task: t };
+});
+route("GET", "/api/scheduler/tasks", (_b, q) => (q.id ? { task: scheduler.getTask(q.id) } : { tasks: scheduler.listTasks() }));
+route("POST", "/api/scheduler/tasks/run-now", async (body, _q, ctx) => {
+  const runScenarioBound = (scenario) => runScenario(scenario, { base_url: ctx && ctx.base_url });
+  const r = await scheduler.runTask(body.id, { manual: true, ctx: { runScenario: runScenarioBound } });
+  return r.error ? { ...r, _status: r._status || 400 } : r;
+});
+route("POST", "/api/scheduler/tasks/enable", (body) => {
+  const r = scheduler.setEnabled(body.id, true);
+  return r.error ? r : { task: r };
+});
+route("POST", "/api/scheduler/tasks/disable", (body) => {
+  const r = scheduler.setEnabled(body.id, false);
+  return r.error ? r : { task: r };
+});
+route("POST", "/api/scheduler/tasks/delete", (body) => scheduler.deleteTask(body.id));
+route("GET", "/api/scheduler/runs", (_b, q) => ({ runs: scheduler.listRuns({ task_id: q.task_id, limit: Number(q.limit) || 50 }) }));
+route("GET", "/api/scheduler/run", (_b, q) => ({ run: scheduler.getRun(q.id) }));
+
+// --- requirement contracts (V0.5) -------------------------------------------
+route("POST", "/api/contracts", (body) => {
+  const c = createContract(body);
+  return c.error ? { ...c, _status: 400 } : { contract: c };
+});
+route("GET", "/api/contracts", (_b, q) => (q.id ? { contract: getContract(q.id) } : { contracts: listContracts() }));
+route("POST", "/api/contracts/codex-prompt", (body) => ({ prompt: codexPrompt(getContract(body.requirement_id)) }));
+route("POST", "/api/contracts/claude-prompt", (body) => ({ prompt: claudePrompt(getContract(body.requirement_id)) }));
+
+// --- delivery verification (V0.5) -------------------------------------------
+route("POST", "/api/deliveries/intake", (body) => delivery.intake(body));
+route("GET", "/api/deliveries", (_b, q) => (q.id ? { delivery: delivery.getDelivery(q.id) } : { deliveries: delivery.listDeliveries() }));
+route("POST", "/api/deliveries/verify", async (body, _q, ctx) => {
+  const r = await delivery.verify(body.id, {
+    skipTests: body.skip_tests === true,
+    testResult: body.test_result,
+    base_url: ctx && ctx.base_url,
+  });
+  return r.error ? { ...r, _status: r._status || 400 } : r;
+});
+route("POST", "/api/deliveries/accept", (body) => {
+  const r = delivery.accept(body.id, { force: body.force === true });
+  return r.error ? { ...r, _status: r._status || 400 } : { delivery: r };
+});
+route("POST", "/api/deliveries/reject", (body) => ({ delivery: delivery.reject(body.id, { reason: body.reason }) }));
+route("POST", "/api/deliveries/request-repair", (body) => delivery.requestRepair(body.id));
+
+// --- real usage runner (V0.5) -----------------------------------------------
+route("POST", "/api/real-usage/run", async (body, _q, ctx) => {
+  const r = await runScenario(body.scenario || body, { base_url: (body && body.base_url) || (ctx && ctx.base_url) });
+  return { result: r };
+});
+
 // --- test center ------------------------------------------------------------
 route("GET", "/api/tests", () => listTests());
 route("POST", "/api/tests/run", async () => {
@@ -292,7 +354,8 @@ export function createApp() {
     try {
       const body = req.method === "POST" ? await readBody(req) : {};
       const query = Object.fromEntries(url.searchParams.entries());
-      const result = await handler(body, query);
+      const ctx = { base_url: `http://${req.headers.host || "127.0.0.1"}` };
+      const result = await handler(body, query, ctx);
       const status = result && result._status ? result._status : result && result.error ? 400 : 200;
       if (result && result._status) delete result._status;
       json(res, status, result);
@@ -307,9 +370,16 @@ export function createApp() {
 const isMain = process.argv[1] && process.argv[1].endsWith("server.js");
 if (isMain) {
   loadPersisted();
+  loadPersistedScheduler();
+  loadPersistedContracts();
+  // Scheduler tick loop — fires due tasks unattended (high-risk tasks park as
+  // pending_approval inside runTask).
+  setInterval(() => {
+    scheduler.tick({ ctx: { runScenario: (s) => runScenario(s, { base_url: `http://127.0.0.1:${process.env.PORT || 4007}` }) } }).catch(() => {});
+  }, 30000);
   const port = Number(process.env.PORT) || 4007;
   createApp().listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`TFNK Agent OS v0.4 listening on http://localhost:${port}`);
+    console.log(`TFNK Agent OS v0.5 listening on http://localhost:${port}`);
   });
 }

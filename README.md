@@ -85,8 +85,13 @@ real camera/RTSP stream here — and the project's iron rule forbids faking. So:
 ```bash
 npm start            # serve UI + API on http://localhost:4007
 npm test             # run the real test suite (70 tests)
+npm run smoke        # real-world end-to-end checks (42 checks, boots the app)
 npm run audit        # run the UI Audit Agent from the CLI
 ```
+
+See **[OM.md](OM.md)** — the Operations Manual / operating memory — for the full
+consolidated record (every build, API, safety model, honesty boundaries, and the
+latest dated verification snapshot).
 
 Open <http://localhost:4007> for the Agent Command Center.
 

@@ -21,5 +21,7 @@ jobs:
       # Zero runtime dependencies — nothing to install.
       - name: Run test suite
         run: node --test
+      - name: Run real-world smoke test (every feature, end to end)
+        run: npm run smoke
       - name: Run UI audit (fails if any control claims a feature it can't back)
         run: npm run audit

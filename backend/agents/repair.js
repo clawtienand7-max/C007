@@ -14,9 +14,14 @@ const SAFE_ROOT_CAUSES = new Set([
   "config_default",
 ]);
 
-export function repair({ session_id, dry_run = true } = {}) {
-  const report = audit();
-  const broken = report.items.filter((i) => i.status !== "connected");
+// `report` may be injected (used by tests) to exercise the gated path
+// deterministically; otherwise the live UI audit is used.
+export function repair({ session_id, dry_run = true, report } = {}) {
+  const r = report || audit();
+  // Only genuine problems are repair targets. Connected, client-only and
+  // declared-pending (future-phase) controls are honest and left alone.
+  const ignore = new Set(["connected", "client_only", "pending_phase"]);
+  const broken = r.items.filter((i) => !ignore.has(i.status));
 
   if (broken.length === 0) {
     return {
@@ -27,7 +32,7 @@ export function repair({ session_id, dry_run = true } = {}) {
       files_to_change: [],
       repair_result: "passed",
       test_result: "nothing to repair",
-      notes: ["audit found no incomplete elements"],
+      notes: ["audit found no genuine problems (only connected / client-only / declared-pending controls)"],
     };
   }
 

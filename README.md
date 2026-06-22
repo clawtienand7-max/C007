@@ -28,7 +28,9 @@ is fully runnable today with **zero external dependencies** (Node ≥ 20 only �
 | **Test Center** (runs the real suite) | ✅ | `backend/agents/testCenter.js` |
 | **Trace Viewer / Logs** | ✅ | `/api/logs`, right dock in UI |
 | **Agent Command Center UI** | ✅ | `frontend/` |
-| Computer Use (screenshot/click) | ⏳ Phase 3 (declared, disabled) | registry `implemented:false` |
+| **Master Orchestrator** (autonomous run + Report Generator) | ✅ Phase 2 | `backend/agents/orchestrator.js` |
+| **Memory Center** (project knowledge) | ✅ Phase 2 | `backend/lib/memory.js` |
+| **Computer Use Agent** (in-app virtual screen) | ✅ Phase 3 | `backend/agents/computerUse.js` |
 | Workflow Canvas | ⏳ Phase 4 (declared, disabled) | registry `implemented:false` |
 
 Future-phase controls are **honestly disabled** in the UI (greyed out, labelled
@@ -40,7 +42,7 @@ Future-phase controls are **honestly disabled** in the UI (greyed out, labelled
 
 ```bash
 npm start            # serve UI + API on http://localhost:4007
-npm test             # run the real test suite (20 tests)
+npm test             # run the real test suite (32 tests)
 npm run audit        # run the UI Audit Agent from the CLI
 ```
 
@@ -62,8 +64,14 @@ Open <http://localhost:4007> for the Agent Command Center.
 4. Client-only controls (tab switches, refresh) must declare `data-client="true"`
    — they're explicitly excluded, never silently ignored.
 
+The audit distinguishes three honest non-problems from genuine fakes:
+`connected`, `client_only` (declared with `data-client`), and `pending_phase`
+(declared `implemented:false` future work). Only genuine fakes
+(`missing_action_id / missing_backend / missing_test / fake_or_unmapped /
+broken`) fail the audit and CI.
+
 Run `npm run audit` to see the live report. Current foundation:
-**11 connected, 5 client-only, 2 intentionally-disabled (Phase 3/4).**
+**17 connected, 9 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
 
 ---
 
@@ -102,6 +110,12 @@ Hard rules baked into code:
 | POST | `/api/agent/verify` | evidence-gated verification |
 | POST | `/api/agent/repair` | propose minimal safe fix (gated) |
 | POST | `/api/agent/audit` | run UI Audit Agent |
+| POST | `/api/agent/run` | **autonomous** understand→plan→execute→verify→report |
+| POST | `/api/memory/write` | save a rule / fact / fix to project memory |
+| GET | `/api/memory/search` | recall project memory |
+| POST | `/api/computer/screenshot` | virtual screen snapshot of the registered surface |
+| POST | `/api/computer/click` | click a real bound control (refuses disabled/gated) |
+| POST | `/api/computer/type` | type into a virtual field (write-then-read verify) |
 | POST | `/api/loop/run` | start LOOP |
 | GET | `/api/loop/status` | LOOP state |
 | POST | `/api/loop/stop` | stop LOOP |
@@ -123,24 +137,40 @@ backend/
   lib/
     store.js           in-memory state + best-effort JSON persistence
     registry.js        registry/control-map loaders + LIVE_ROUTES + status rules
+    memory.js          Memory Center (project knowledge) [Phase 2]
   agents/
     intent.js          Intent Classifier
     planner.js         Task Planner
+    executor.js        Execution Engine (shared step runner)
+    orchestrator.js    Master Orchestrator + Report Generator [Phase 2]
     uiAudit.js         UI Audit Agent
     verifier.js        Verification Agent
     repair.js          Repair Agent (permission-gated)
+    computerUse.js     Computer Use Agent (in-app virtual screen) [Phase 3]
     testCenter.js      runs the real test suite as a child process
   cli/audit.js         `npm run audit`
 data/
   action_registry.json action source of truth
   ui_control_map.json  UI→action bindings
 frontend/              Agent Command Center (index.html / app.js / styles.css)
-test/                  api.test.js + agents.test.js (20 tests, all green)
+test/                  api / agents / phase23 (.test.js) — 32 tests, all green
+.github/workflows/     ci.yml — runs the suite + audit on Node 20 & 22
 ```
 
 ## Roadmap (from the blueprint)
 
-- **Phase 2** — richer orchestrator memory, multi-step autonomous runs, trace UI drill-down.
-- **Phase 3** — Computer Use layer (screenshot / click / type / observe / verify).
-- **Phase 4** — Workflow Canvas (trigger / agent / tool / approval / retry nodes).
-- **Phase 5** — Engineering agent (issue → branch → edit → test → PR → rollback).
+- **Phase 1** — ✅ Foundation: registry, audit, planner, verifier, repair, LOOP, tests.
+- **Phase 2** — ✅ Master Orchestrator (autonomous `agent.run` + Report Generator) and Memory Center.
+- **Phase 3** — ✅ Computer Use layer (screenshot / click / type / observe / verify), in-app virtual screen.
+- **Phase 4** — ⏳ Workflow Canvas (trigger / agent / tool / approval / retry nodes).
+- **Phase 5** — ⏳ Engineering agent (issue → branch → edit → test → PR → rollback).
+
+### Computer Use scope & honesty
+
+Phase 3 Computer Use operates on TFNK's **own registered UI surface** (the action
+registry + control map + live state), not an OS-level screen grab. A "click"
+performs the **real** action bound to the element and is verified against real
+state. It refuses to click disabled controls, and never auto-clicks
+permission-gated (high-risk) controls — it reports `blocked` instead. OS-level
+screen control would require native dependencies and is out of scope for this
+zero-dependency foundation.

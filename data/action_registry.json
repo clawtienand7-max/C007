@@ -135,14 +135,69 @@
       "fallback": "show_error_and_disable_button"
     },
     {
+      "id": "agent.run",
+      "label": "Run Autonomously",
+      "ui_element": "btn_run_auto",
+      "api": "/api/agent/run",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_agent_run",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "memory.write",
+      "label": "Save to Memory",
+      "ui_element": "btn_memory_write",
+      "api": "/api/memory/write",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_memory_write",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "memory.search",
+      "label": "Search Memory",
+      "ui_element": "btn_memory_search",
+      "api": "/api/memory/search",
+      "method": "GET",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_memory_search",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
       "id": "computer.screenshot",
-      "label": "Screenshot (Phase 3)",
+      "label": "Screenshot (virtual)",
       "ui_element": "btn_screenshot",
       "api": "/api/computer/screenshot",
       "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_computer_screenshot",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "computer.click",
+      "label": "Computer Click",
+      "ui_element": "btn_computer_click",
+      "api": "/api/computer/click",
+      "method": "POST",
       "risk": "medium",
-      "implemented": false,
-      "test_id": null,
+      "implemented": true,
+      "test_id": "test_computer_click",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "computer.type",
+      "label": "Computer Type",
+      "ui_element": "btn_computer_type",
+      "api": "/api/computer/type",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_computer_type",
       "fallback": "show_error_and_disable_button"
     },
     {

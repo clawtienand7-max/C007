@@ -13,7 +13,11 @@ import { plan as makePlan } from "./agents/planner.js";
 import { audit } from "./agents/uiAudit.js";
 import { verify } from "./agents/verifier.js";
 import { repair } from "./agents/repair.js";
+import { executeStep } from "./agents/executor.js";
+import { runAutonomous } from "./agents/orchestrator.js";
 import { listTests, runTests } from "./agents/testCenter.js";
+import { writeMemory, searchMemory } from "./lib/memory.js";
+import * as computerUse from "./agents/computerUse.js";
 import * as loopEngine from "./loop.js";
 
 const MIME = {
@@ -127,34 +131,7 @@ route("POST", "/api/agent/plan", (body) => {
 route("POST", "/api/agent/step/run", (body) => {
   const { session_id, step } = body;
   if (!step || !step.name) return { error: "step with a name is required", _status: 400 };
-  const record = {
-    step_id: step.step_id || nextId("step", "step"),
-    session_id: session_id || null,
-    name: step.name,
-    tool: step.tool || "noop",
-    input: step.input || {},
-    output: { ok: true, note: "step executed by foundation execution engine" },
-    verification: step.verification_method ? "pending" : "skipped",
-    started_at: new Date().toISOString(),
-    duration_ms: 0,
-  };
-  const t0 = Date.now();
-  // Dispatch a few real tools so steps do genuine work.
-  if (step.tool === "file_scanner" || step.tool === "registry_reader") {
-    record.output = audit();
-    record.verification = record.output.fake_or_incomplete === 0 ? "passed" : "failed";
-  } else if (step.tool === "api_checker") {
-    const exists = step.input && step.input.api ? routeExists(step.input.method || "GET", step.input.api) : null;
-    record.output = { exists };
-    record.verification = exists ? "passed" : "failed";
-  } else if (step.tool === "loop_engine") {
-    record.output = loopEngine.getStatus();
-    record.verification = "passed";
-  }
-  record.duration_ms = Date.now() - t0;
-  saveStep(record);
-  addLog({ session_id, agent: "ExecutionEngine", event: "step_run", detail: { step_id: record.step_id, verification: record.verification } });
-  return { step: record };
+  return { step: executeStep(step, session_id) };
 });
 
 route("POST", "/api/agent/verify", (body) => verify(body));
@@ -162,6 +139,23 @@ route("POST", "/api/agent/verify", (body) => verify(body));
 route("POST", "/api/agent/repair", (body) => repair(body));
 
 route("POST", "/api/agent/audit", () => ({ report: audit() }));
+
+// Master Orchestrator — autonomous understand→plan→execute→verify→report.
+route("POST", "/api/agent/run", (body) => runAutonomous(body));
+
+// --- memory -----------------------------------------------------------------
+route("POST", "/api/memory/write", (body) => {
+  const entry = writeMemory(body);
+  if (entry.error) return { ...entry, _status: 400 };
+  addLog({ agent: "MemoryAgent", event: "memory_write", detail: { id: entry.id, kind: entry.kind } });
+  return { entry };
+});
+route("GET", "/api/memory/search", (_b, q) => searchMemory({ q: q.q, kind: q.kind, limit: Number(q.limit) || 20 }));
+
+// --- computer use (Phase 3, in-app virtual screen) --------------------------
+route("POST", "/api/computer/screenshot", () => ({ snapshot: computerUse.screenshot() }));
+route("POST", "/api/computer/click", (body) => computerUse.click(body));
+route("POST", "/api/computer/type", (body) => computerUse.type(body));
 
 // --- loop -------------------------------------------------------------------
 route("POST", "/api/loop/run", (body) => loopEngine.start(body));

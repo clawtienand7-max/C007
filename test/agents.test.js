@@ -5,6 +5,7 @@ import { classify } from "../backend/agents/intent.js";
 import { plan } from "../backend/agents/planner.js";
 import { audit } from "../backend/agents/uiAudit.js";
 import { verify } from "../backend/agents/verifier.js";
+import { repair } from "../backend/agents/repair.js";
 import { runToCompletionSync, getStatus } from "../backend/loop.js";
 import { _resetForTests } from "../backend/lib/store.js";
 
@@ -32,17 +33,39 @@ test("planner produces steps that all carry a verification_method", () => {
 test("ui audit scans real frontend and classifies every element", () => {
   const r = audit();
   assert.ok(r.total_elements > 0, "should find interactive elements");
-  assert.equal(r.connected + r.client_only + r.fake_or_incomplete, r.total_elements);
+  assert.equal(r.connected + r.client_only + r.pending + r.fake_or_incomplete, r.total_elements);
   for (const item of r.items) {
     assert.ok(item.status, "each item has a status");
   }
 });
 
-test("ui audit flags the intentionally-unimplemented Phase 3/4 buttons as missing_backend", () => {
+test("ui audit reports zero genuine problems on a clean foundation", () => {
   const r = audit();
-  const screenshot = r.items.find((i) => i.action_id === "computer.screenshot");
-  assert.ok(screenshot, "screenshot button should be found");
-  assert.equal(screenshot.status, "missing_backend");
+  assert.equal(r.fake_or_incomplete, 0, "no genuine fakes should remain");
+});
+
+test("ui audit marks declared future-phase buttons as pending_phase, not fake", () => {
+  const r = audit();
+  const wf = r.items.find((i) => i.action_id === "workflow.run");
+  assert.ok(wf, "workflow button should be found");
+  assert.equal(wf.status, "pending_phase");
+});
+
+test("repair gates source edits behind a permission when given problems", () => {
+  const fakeReport = {
+    items: [
+      { ui_id: "btn_x", action_id: "x", file: "frontend/index.html", status: "missing_backend", required_fix: "add route" },
+    ],
+  };
+  const r = repair({ report: fakeReport });
+  assert.equal(r.requires_permission, true);
+  assert.ok(r.permission_id);
+});
+
+test("repair reports nothing to do on a clean audit", () => {
+  const r = repair({});
+  assert.equal(r.requires_permission, false);
+  assert.equal(r.repair_result, "passed");
 });
 
 test("verifier refuses to pass without evidence", () => {

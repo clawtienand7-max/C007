@@ -58,6 +58,7 @@ async function bootstrap() {
   loadAudit();
   loadTestsInventory();
   loadPermissions();
+  loadMemory();
 }
 
 // --- handlers ---------------------------------------------------------------
@@ -133,6 +134,53 @@ const handlers = {
     toast("Emergency stop engaged");
     refreshLoopStatus();
   },
+  "agent.run": async () => {
+    const goal = $("#goal_input").value || "Audit and repair fake UI in TFNK";
+    mind("Running autonomously…");
+    const { data } = await api("/api/agent/run", { method: "POST", body: { goal } });
+    state.session = data.session;
+    mind(data.report.markdown);
+    addTimeline(`Autonomous run: ${data.session.status}`, `completed ${data.report.completed} • verified ${data.report.verified}`, data.report.verified ? "passed" : "");
+    switchTab("timeline");
+    refreshLogs();
+    toast(`Autonomous run: ${data.session.status}`);
+  },
+  "memory.write": async () => {
+    const text = $("#memory_input").value.trim();
+    if (!text) return toast("Type something to remember");
+    const { data } = await api("/api/memory/write", { method: "POST", body: { kind: "fact", text } });
+    $("#memory_input").value = "";
+    addTimeline("Memory saved", data.entry.id);
+    loadMemory();
+    switchTab("memory");
+    toast("Saved to memory");
+  },
+  "memory.search": async () => {
+    const q = $("#memory_input").value.trim();
+    await loadMemory(q);
+    switchTab("memory");
+    toast("Memory searched");
+  },
+  "computer.screenshot": async () => {
+    const { data } = await api("/api/computer/screenshot", { method: "POST" });
+    $("#computer_view").textContent = JSON.stringify(data.snapshot, null, 2);
+    switchTab("computer");
+    addTimeline("Computer screenshot", `${data.snapshot.elements.length} elements seen`);
+  },
+  "computer.click": async () => {
+    const ui_id = $("#click_input").value.trim() || "btn_loop_status";
+    const { data } = await api("/api/computer/click", { method: "POST", body: { ui_id } });
+    addTimeline(`Computer click: ${ui_id}`, `${data.verification} — ${data.reason}`, data.verification === "passed" ? "passed" : data.verification === "blocked" ? "failed" : "");
+    switchTab("computer");
+    handlers["computer.screenshot"]();
+    toast(`click ${ui_id}: ${data.verification}`);
+  },
+  "computer.type": async () => {
+    const text = $("#goal_input").value || "typed by computer use agent";
+    const { data } = await api("/api/computer/type", { method: "POST", body: { ui_id: "goal_input", text } });
+    addTimeline("Computer type → goal_input", `${data.verification} — ${data.reason}`, data.verification === "passed" ? "passed" : "");
+    toast(`type: ${data.verification}`);
+  },
   "tests.run": async () => {
     switchTab("tests");
     $("#tests_summary").innerHTML = `<div class="stat"><b>…</b><span>running real test suite</span></div>`;
@@ -180,6 +228,20 @@ async function loadTestsInventory() {
     <div class="stat"><b>${data.coverage.total}</b><span>actions</span></div>
     <div class="stat"><b>${data.coverage.with_test}</b><span>with test</span></div>
     <div class="stat"><b>${data.test_files.length}</b><span>test files</span></div>`;
+}
+
+async function loadMemory(q = "") {
+  const data = await api(`/api/memory/search?q=${encodeURIComponent(q)}`).then((r) => r.data);
+  const box = $("#memory_list");
+  if (!data.results || !data.results.length) {
+    box.innerHTML = `<p class="hint">No memory entries${q ? ` matching "${q}"` : ""}.</p>`;
+    return;
+  }
+  box.innerHTML =
+    `<p class="hint">${data.matched} of ${data.total} entries${q ? ` matching "${q}"` : ""}</p>` +
+    data.results
+      .map((e) => `<div class="perm" style="border-color:var(--border)"><b>${e.kind}</b> <span class="hint">${e.id}</span><div>${e.text}</div><div class="hint">tags: ${(e.tags || []).join(", ") || "—"}</div></div>`)
+      .join("");
 }
 
 async function loadPermissions() {

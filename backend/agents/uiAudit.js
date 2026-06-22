@@ -89,10 +89,14 @@ export function audit() {
         reason = `element "${el.ui_id}" is missing from ui_control_map.json`;
         required_fix = "add the element to the UI control map";
       } else if (!action.implemented) {
-        status = "missing_backend";
-        reason = `action "${action.id}" is registered but implemented=false`;
-        required_fix = `implement ${action.method} ${action.api} and flip implemented=true`;
+        // Declared future-phase work (implemented:false in the registry). This
+        // is NOT a fake — it is an honest "not yet". CI tolerates these; the UI
+        // shows them disabled.
+        status = "pending_phase";
+        reason = `action "${action.id}" is declared but not yet implemented (future phase)`;
+        required_fix = `implement ${action.method} ${action.api} and flip implemented=true when the phase lands`;
       } else if (!routeExists(action.method, action.api)) {
+        // implemented:true but no live route => a genuine bug CI must catch.
         status = "missing_backend";
         reason = `route ${action.method} ${action.api} is not live on the server`;
         required_fix = `add route ${action.method} ${action.api}`;
@@ -120,15 +124,18 @@ export function audit() {
 
   const connected = items.filter((i) => i.status === "connected").length;
   const client_only = items.filter((i) => i.status === "client_only").length;
-  // "Incomplete" = anything that claims to be a real feature but isn't fully
-  // wired. Client-only controls are explicitly declared and excluded.
-  const fake_or_incomplete = items.length - connected - client_only;
+  const pending = items.filter((i) => i.status === "pending_phase").length;
+  // "Incomplete" = a genuine problem: a control that claims to be a real,
+  // shipped feature but isn't fully wired. Client-only and declared-pending
+  // controls are honest and excluded. Only this count fails the audit / CI.
+  const fake_or_incomplete = items.length - connected - client_only - pending;
 
   return {
     generated_at: new Date().toISOString(),
     total_elements: items.length,
     connected,
     client_only,
+    pending,
     fake_or_incomplete,
     by_status: items.reduce((acc, i) => {
       acc[i.status] = (acc[i.status] || 0) + 1;

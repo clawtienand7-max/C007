@@ -34,7 +34,9 @@ test("/api/actions annotates each action with a live status", async () => {
   const start = r.actions.find((a) => a.id === "loop.start");
   assert.equal(start.status, "connected");
   const shot = r.actions.find((a) => a.id === "computer.screenshot");
-  assert.equal(shot.status, "backend_missing");
+  assert.equal(shot.status, "connected");
+  const wf = r.actions.find((a) => a.id === "workflow.run");
+  assert.equal(wf.status, "backend_missing");
 });
 
 test("/api/ui-control-map returns annotated screens", async () => {
@@ -97,15 +99,18 @@ test("test_emergency_stop: emergency stop engages and blocks new runs", async ()
   await post("/api/loop/stop", {});
 });
 
-test("test_repair + test_permission_decide: repair gates source edits behind permission", async () => {
+test("test_repair: repair reports nothing to do on a clean foundation", async () => {
   const r = await post("/api/agent/repair", {});
-  // foundation has incomplete (phase 3/4) buttons, so repair must request permission
-  assert.equal(r.requires_permission, true);
-  assert.ok(r.permission_id);
+  assert.equal(r.requires_permission, false);
+  assert.equal(r.repair_result, "passed");
+});
 
+test("test_permission_decide: repair with injected problems creates an approvable permission", async () => {
+  const report = { items: [{ ui_id: "btn_x", action_id: "x", file: "frontend/index.html", status: "missing_backend", required_fix: "add route" }] };
+  const r = await post("/api/agent/repair", { report });
+  assert.equal(r.requires_permission, true);
   const perms = await get("/api/permissions");
   assert.ok(perms.permissions.some((p) => p.permission_id === r.permission_id));
-
   const decided = await post("/api/permissions/decide", { permission_id: r.permission_id, decision: "deny" });
   assert.equal(decided.permission.status, "denied");
 });

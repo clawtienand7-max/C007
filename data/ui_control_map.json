@@ -17,7 +17,12 @@
         { "id": "btn_emergency_stop", "type": "button", "label": "EMERGENCY STOP", "action_id": "emergency.stop" },
         { "id": "btn_run_tests", "type": "button", "label": "Run Tests", "action_id": "tests.run" },
         { "id": "btn_permission_decide", "type": "button", "label": "Approve / Deny", "action_id": "permission.decide" },
-        { "id": "btn_screenshot", "type": "button", "label": "Screenshot (Phase 3)", "action_id": "computer.screenshot" },
+        { "id": "btn_run_auto", "type": "button", "label": "Run Autonomously", "action_id": "agent.run" },
+        { "id": "btn_memory_write", "type": "button", "label": "Save to Memory", "action_id": "memory.write" },
+        { "id": "btn_memory_search", "type": "button", "label": "Search Memory", "action_id": "memory.search" },
+        { "id": "btn_screenshot", "type": "button", "label": "Screenshot (virtual)", "action_id": "computer.screenshot" },
+        { "id": "btn_computer_click", "type": "button", "label": "Computer Click", "action_id": "computer.click" },
+        { "id": "btn_computer_type", "type": "button", "label": "Computer Type", "action_id": "computer.type" },
         { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
       ]
     }

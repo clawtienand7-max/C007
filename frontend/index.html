@@ -49,8 +49,23 @@
         </div>
 
         <div class="group">
+          <h3>Autonomy &amp; Memory</h3>
+          <button id="btn_run_auto" data-action="agent.run" data-label="Run Autonomously">▶ Run Autonomously</button>
+          <input id="memory_input" placeholder="remember a rule / fact…" data-client="true" />
+          <button id="btn_memory_write" data-action="memory.write" data-label="Save to Memory">Save to Memory</button>
+          <button id="btn_memory_search" data-action="memory.search" data-label="Search Memory">Search Memory</button>
+        </div>
+
+        <div class="group">
+          <h3>Computer Use (Phase 3)</h3>
+          <button id="btn_screenshot" data-action="computer.screenshot" data-label="Screenshot (virtual)">Screenshot (virtual)</button>
+          <input id="click_input" placeholder="ui_id to click, e.g. btn_loop_status" data-client="true" />
+          <button id="btn_computer_click" data-action="computer.click" data-label="Computer Click">Computer Click</button>
+          <button id="btn_computer_type" data-action="computer.type" data-label="Computer Type">Computer Type (into goal)</button>
+        </div>
+
+        <div class="group">
           <h3>Future Phases</h3>
-          <button id="btn_screenshot" data-action="computer.screenshot" data-label="Screenshot (Phase 3)">Screenshot (Phase 3)</button>
           <button id="btn_run_workflow" data-action="workflow.run" data-label="Run Workflow (Phase 4)">Run Workflow (Phase 4)</button>
         </div>
 
@@ -65,6 +80,8 @@
           <button class="tab active" data-tab="timeline" data-client="true">Task Timeline</button>
           <button class="tab" data-tab="audit" data-client="true">Action Inspector</button>
           <button class="tab" data-tab="tests" data-client="true">Test Center</button>
+          <button class="tab" data-tab="computer" data-client="true">Computer View</button>
+          <button class="tab" data-tab="memory" data-client="true">Memory Center</button>
           <button class="tab" data-tab="permissions" data-client="true">Permission Queue</button>
         </div>
 
@@ -88,6 +105,18 @@
           <h3>Test Center</h3>
           <div id="tests_summary" class="summary"></div>
           <pre id="tests_output" class="logbox"></pre>
+        </div>
+
+        <div id="tab_computer" class="tabpane">
+          <h3>Computer View <span class="hint">(in-app virtual screen)</span></h3>
+          <p class="hint">The agent observes TFNK's own registered surface, clicks real bound actions, and verifies the resulting state. It never clicks disabled or permission-gated controls.</p>
+          <pre id="computer_view" class="logbox"></pre>
+        </div>
+
+        <div id="tab_memory" class="tabpane">
+          <h3>Memory Center</h3>
+          <p class="hint">Project knowledge: rules, facts and past fixes the agent recalls across sessions.</p>
+          <div id="memory_list"></div>
         </div>
 
         <div id="tab_permissions" class="tabpane">

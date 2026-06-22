@@ -106,6 +106,28 @@ export const LIVE_ROUTES = new Set([
   "POST /api/deliveries/reject",
   "POST /api/deliveries/request-repair",
   "POST /api/real-usage/run",
+  // V0.7 — self-extension & self-upgrade
+  "POST /api/self/gaps/detect",
+  "POST /api/self/gaps",
+  "GET /api/self/gaps",
+  "POST /api/self/research/run",
+  "POST /api/self/github/search",
+  "POST /api/self/github/evaluate-repo",
+  "GET /api/self/candidates",
+  "POST /api/self/skills/create",
+  "GET /api/self/skills",
+  "POST /api/self/sandbox/create",
+  "POST /api/self/sandbox/inspect",
+  "POST /api/self/sandbox/install",
+  "POST /api/self/sandbox/audit",
+  "POST /api/self/sandbox/destroy",
+  "POST /api/self/upgrade/proposal",
+  "GET /api/self/upgrade/proposals",
+  "POST /api/self/upgrade/delegate",
+  "POST /api/self/upgrade/verify",
+  "POST /api/self/upgrade/request-approval",
+  "POST /api/self/upgrade/apply",
+  "POST /api/self/upgrade/rollback",
 ]);
 
 export function routeExists(method, api) {

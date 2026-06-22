@@ -344,6 +344,83 @@
       "fallback": "show_error_and_disable_button"
     },
     {
+      "id": "self.gaps.detect",
+      "label": "Detect Capability Gaps",
+      "ui_element": "btn_self_detect",
+      "api": "/api/self/gaps/detect",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_self_gap_detect",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "self.research.run",
+      "label": "Run Self Research",
+      "ui_element": "btn_self_research",
+      "api": "/api/self/research/run",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_self_research_run",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "self.github.search",
+      "label": "Search GitHub Libraries",
+      "ui_element": "btn_self_github",
+      "api": "/api/self/github/search",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_github_search",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "self.sandbox.install",
+      "label": "Install Candidate in Sandbox",
+      "ui_element": "btn_self_sandbox",
+      "api": "/api/self/sandbox/install",
+      "method": "POST",
+      "risk": "high",
+      "implemented": true,
+      "test_id": "test_sandbox_install",
+      "fallback": "request_permission"
+    },
+    {
+      "id": "self.upgrade.delegate",
+      "label": "Delegate Self Upgrade",
+      "ui_element": "btn_self_delegate",
+      "api": "/api/self/upgrade/delegate",
+      "method": "POST",
+      "risk": "high",
+      "implemented": true,
+      "test_id": "test_self_upgrade_delegate",
+      "fallback": "request_permission"
+    },
+    {
+      "id": "self.upgrade.apply",
+      "label": "Apply Self Upgrade",
+      "ui_element": "btn_self_apply",
+      "api": "/api/self/upgrade/apply",
+      "method": "POST",
+      "risk": "critical",
+      "implemented": true,
+      "test_id": "test_self_upgrade_apply",
+      "fallback": "request_permission"
+    },
+    {
+      "id": "self.upgrade.rollback",
+      "label": "Rollback Self Upgrade",
+      "ui_element": "btn_self_rollback",
+      "api": "/api/self/upgrade/rollback",
+      "method": "POST",
+      "risk": "critical",
+      "implemented": true,
+      "test_id": "test_self_upgrade_rollback",
+      "fallback": "request_permission"
+    },
+    {
       "id": "workflow.run",
       "label": "Run Workflow (Phase 4)",
       "ui_element": "btn_run_workflow",

@@ -96,6 +96,17 @@
         </div>
 
         <div class="group">
+          <h3>Self-Upgrade (V0.7)</h3>
+          <button id="btn_self_detect" data-action="self.gaps.detect" data-label="Detect Capability Gaps">Detect Capability Gaps</button>
+          <button id="btn_self_research" data-action="self.research.run" data-label="Run Self Research">Run Research</button>
+          <button id="btn_self_github" data-action="self.github.search" data-label="Search GitHub Libraries">Search GitHub Libraries</button>
+          <button id="btn_self_sandbox" data-action="self.sandbox.install" data-label="Install Candidate in Sandbox">Sandbox Install</button>
+          <button id="btn_self_delegate" data-action="self.upgrade.delegate" data-label="Delegate Self Upgrade">Delegate Upgrade</button>
+          <button id="btn_self_apply" data-action="self.upgrade.apply" data-label="Apply Self Upgrade">Apply Upgrade</button>
+          <button id="btn_self_rollback" data-action="self.upgrade.rollback" data-label="Rollback Self Upgrade">Rollback</button>
+        </div>
+
+        <div class="group">
           <h3>Future Phases</h3>
           <button id="btn_run_workflow" data-action="workflow.run" data-label="Run Workflow (Phase 4)">Run Workflow (Phase 4)</button>
         </div>
@@ -117,6 +128,7 @@
           <button class="tab" data-tab="vision" data-client="true">Vision Control</button>
           <button class="tab" data-tab="scheduler" data-client="true">Scheduler</button>
           <button class="tab" data-tab="delivery" data-client="true">Delivery Acceptance</button>
+          <button class="tab" data-tab="selfupgrade" data-client="true">Self-Upgrade</button>
           <button class="tab" data-tab="permissions" data-client="true">Permission Queue</button>
         </div>
 
@@ -197,6 +209,20 @@
           <h3>Delivery Verification Center <span class="hint">TFNK is the final acceptance officer</span></h3>
           <p class="hint">Codex / Claude deliveries are candidates until they pass: requirement match → diff safety → tests → UI/API audit → real usage. No evidence ⇒ not accepted.</p>
           <div id="delivery_list"></div>
+        </div>
+
+        <div id="tab_selfupgrade" class="tabpane">
+          <h3>Self-Upgrade Center <span class="hint">research → sandbox → verify → approve</span></h3>
+          <p class="hint">TFNK proposes its own upgrades but never installs unknown code or rewrites itself unattended: install / delegate / apply / rollback are permission-gated, and web/GitHub fetch is honest about network limits (no fabricated sources).</p>
+          <h4>Capability Gaps</h4>
+          <div id="gaps_list"></div>
+          <h4>Candidate Libraries (scored)</h4>
+          <table class="data" id="candidates_table">
+            <thead><tr><th>Name</th><th>License</th><th>Score</th><th>Risk</th><th>Recommendation</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <h4>Upgrade Proposals</h4>
+          <div id="proposals_list"></div>
         </div>
 
         <div id="tab_permissions" class="tabpane">

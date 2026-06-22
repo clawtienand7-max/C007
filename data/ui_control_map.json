@@ -36,6 +36,13 @@
         { "id": "btn_delivery_verify", "type": "button", "label": "Verify Delivery", "action_id": "delivery.verify" },
         { "id": "btn_delivery_accept", "type": "button", "label": "Accept Delivery", "action_id": "delivery.accept" },
         { "id": "btn_real_usage", "type": "button", "label": "Run Real Usage Scenario", "action_id": "real_usage.run" },
+        { "id": "btn_self_detect", "type": "button", "label": "Detect Capability Gaps", "action_id": "self.gaps.detect" },
+        { "id": "btn_self_research", "type": "button", "label": "Run Self Research", "action_id": "self.research.run" },
+        { "id": "btn_self_github", "type": "button", "label": "Search GitHub Libraries", "action_id": "self.github.search" },
+        { "id": "btn_self_sandbox", "type": "button", "label": "Install Candidate in Sandbox", "action_id": "self.sandbox.install" },
+        { "id": "btn_self_delegate", "type": "button", "label": "Delegate Self Upgrade", "action_id": "self.upgrade.delegate" },
+        { "id": "btn_self_apply", "type": "button", "label": "Apply Self Upgrade", "action_id": "self.upgrade.apply" },
+        { "id": "btn_self_rollback", "type": "button", "label": "Rollback Self Upgrade", "action_id": "self.upgrade.rollback" },
         { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
       ]
     }

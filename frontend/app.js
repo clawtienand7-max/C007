@@ -64,6 +64,7 @@ async function bootstrap() {
   loadVision();
   loadScheduler();
   loadDelivery();
+  loadSelfUpgrade();
   subscribeEvents();
 }
 
@@ -314,6 +315,63 @@ const handlers = {
     addTimeline(`Real usage: ${data.result.status}`, `usable=${data.result.usable_for_real_work}`, data.result.status === "passed" ? "passed" : "failed");
     toast(`Real usage: ${data.result.status}`);
   },
+  "self.gaps.detect": async () => {
+    const { data } = await api("/api/self/gaps/detect", { method: "POST" });
+    if (data.gaps[0]) state.gapId = data.gaps[0].gap_id;
+    addTimeline("Capability gaps detected", `${data.gaps.length} gap(s)`);
+    switchTab("selfupgrade");
+    loadSelfUpgrade();
+    toast(`${data.gaps.length} gap(s) found`);
+  },
+  "self.research.run": async () => {
+    if (!state.gapId) { await handlers["self.gaps.detect"](); }
+    const { data } = await api("/api/self/research/run", { method: "POST", body: { gap_id: state.gapId } });
+    addTimeline("Self research", `status=${data.report.honest_status} • ${data.report.queries.length} queries`, data.report.honest_status === "ready" ? "passed" : "");
+    toast(`Research: ${data.report.honest_status}`);
+  },
+  "self.github.search": async () => {
+    if (!state.gapId) { await handlers["self.gaps.detect"](); }
+    // No network here: we score user-provided candidate metadata with the real rubric.
+    const candidates = [
+      { name: "pdf-parse", license: "MIT", last_updated: "2026-01-15", stars: 5200, has_tests: true, docs_quality: "good", windows_support: true, macos_support: true },
+      { name: "sketchy-pdf", license: "unknown", last_updated: "2021-02-01", stars: 40, has_install_script: true, runs_shell: true, docs_quality: "poor" },
+    ];
+    const data = await api("/api/self/github/search", { method: "POST", body: { gap_id: state.gapId, candidates } }).then((r) => r.data);
+    addTimeline("GitHub scout", `top=${data.top_recommendation || "—"} • manual_review=${data.manual_review_required}`);
+    switchTab("selfupgrade");
+    loadSelfUpgrade();
+    toast(`Scored ${data.candidates.length} candidates`);
+  },
+  "self.sandbox.install": async () => {
+    const sb = await api("/api/self/sandbox/create", { method: "POST", body: {} }).then((r) => r.data);
+    const manifest = { name: "candidate-lib", version: "1.0.0", license: "MIT", scripts: { postinstall: "node build.js" }, dependencies: { left: "1.0.0" } };
+    const data = await api("/api/self/sandbox/install", { method: "POST", body: { sandbox_id: sb.sandbox_id, manifest } }).then((r) => r.data);
+    addTimeline("Sandbox install", `${data.install_result} • risk ${data.inspection.risk_level}`, "failed");
+    if (data.requires_permission) { switchTab("permissions"); loadPermissions(); }
+    toast(data.requires_permission ? "Install needs approval" : data.install_result);
+  },
+  "self.upgrade.delegate": async () => {
+    if (!state.proposalId) await ensureProposal();
+    const data = await api("/api/self/upgrade/delegate", { method: "POST", body: { proposal_id: state.proposalId, agent: "codex" } }).then((r) => r.data);
+    if (data.requires_permission) { addTimeline("Delegate upgrade", "permission required", ""); switchTab("permissions"); loadPermissions(); }
+    else addTimeline("Delegate upgrade", "prompt generated");
+    toast(data.requires_permission ? "Delegation needs approval" : "Prompt generated");
+  },
+  "self.upgrade.apply": async () => {
+    if (!state.proposalId) await ensureProposal();
+    const data = await api("/api/self/upgrade/apply", { method: "POST", body: { proposal_id: state.proposalId } }).then((r) => r.data);
+    addTimeline("Apply upgrade", data.requires_permission ? "permission required (critical)" : data.status, "");
+    if (data.requires_permission) { switchTab("permissions"); loadPermissions(); }
+    loadSelfUpgrade();
+    toast(data.requires_permission ? "Apply needs approval" : data.status);
+  },
+  "self.upgrade.rollback": async () => {
+    if (!state.proposalId) return toast("No proposal to roll back");
+    const data = await api("/api/self/upgrade/rollback", { method: "POST", body: { proposal_id: state.proposalId } }).then((r) => r.data);
+    addTimeline("Rollback", data.status, "passed");
+    loadSelfUpgrade();
+    toast(data.status);
+  },
   "tests.run": async () => {
     switchTab("tests");
     $("#tests_summary").innerHTML = `<div class="stat"><b>…</b><span>running real test suite</span></div>`;
@@ -450,6 +508,34 @@ async function loadDelivery() {
         ${v ? `<div class="hint">recommendation: <b>${v.recommendation}</b>${v.human_approval_required ? " · human approval required" : ""}</div>` : ""}</div>`;
     })
     .join("");
+}
+
+async function ensureProposal() {
+  if (!state.gapId) await handlers["self.gaps.detect"]();
+  const data = await api("/api/self/upgrade/proposal", { method: "POST", body: {
+    gap_id: state.gapId,
+    title: "Self-upgrade demo",
+    user_goal: "Add the capability described by the selected gap",
+    must_have: ["new action_id", "backend API", "tests", "real usage scenario"],
+    risk_level: "high",
+  } }).then((r) => r.data);
+  state.proposalId = data.proposal.id;
+  addTimeline("Upgrade proposal created", data.proposal.id);
+}
+
+async function loadSelfUpgrade() {
+  const gaps = await api("/api/self/gaps").then((r) => r.data.gaps || []);
+  $("#gaps_list").innerHTML = gaps.length
+    ? gaps.map((g) => `<div class="perm" style="border-color:var(--border)"><b>${g.title}</b> <span class="badge ${g.priority === "high" ? "fake_or_unmapped" : "backend_missing"}">${g.priority}</span><div class="hint">source: ${g.source} · ${g.gap_id} · ${g.status}</div></div>`).join("")
+    : `<p class="hint">No gaps yet. Click Detect Capability Gaps.</p>`;
+  const cands = await api("/api/self/candidates").then((r) => r.data.candidates || []);
+  $("#candidates_table tbody").innerHTML = cands.length
+    ? cands.map((c) => `<tr><td>${c.name}</td><td>${c.license || "unknown"}</td><td>${c.score}</td><td><span class="badge ${c.risk_level === "low" ? "connected" : c.risk_level === "medium" ? "backend_missing" : "fake_or_unmapped"}">${c.risk_level}</span></td><td>${c.recommendation}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="hint">No candidates scored yet.</td></tr>`;
+  const props = await api("/api/self/upgrade/proposals").then((r) => r.data.proposals || []);
+  $("#proposals_list").innerHTML = props.length
+    ? props.map((p) => `<div class="perm" style="border-color:var(--border)"><b>${p.title}</b> <span class="badge ${p.status.includes("verified") || p.status.includes("applied") ? "connected" : p.status.includes("rolled") ? "fake_or_unmapped" : "backend_missing"}">${p.status}</span><div class="hint">risk: ${p.risk_level} · ${p.id}</div><div class="hint">rollback: ${(p.rollback_plan || []).join("; ")}</div></div>`).join("")
+    : `<p class="hint">No upgrade proposals yet.</p>`;
 }
 
 async function loadPermissions() {

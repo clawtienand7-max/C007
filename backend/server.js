@@ -32,6 +32,11 @@ import { createContract, getContract, listContracts, loadPersistedContracts } fr
 import { codexPrompt, claudePrompt } from "./agents/promptGen.js";
 import * as delivery from "./agents/delivery.js";
 import { runScenario } from "./agents/realUsage.js";
+import * as selfExt from "./lib/selfExt.js";
+import { loadPersistedSelfExt } from "./lib/selfExt.js";
+import * as research from "./agents/research.js";
+import * as sandbox from "./agents/sandbox.js";
+import * as selfUpgrade from "./agents/selfUpgrade.js";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -88,7 +93,7 @@ function route(method, path, handler) {
 }
 
 // --- meta -------------------------------------------------------------------
-route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.5.0", time: new Date().toISOString() }));
+route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.7.0", time: new Date().toISOString() }));
 
 route("GET", "/api/actions", () => {
   const reg = loadActions();
@@ -317,6 +322,53 @@ route("POST", "/api/real-usage/run", async (body, _q, ctx) => {
   return { result: r };
 });
 
+// --- self-extension & self-upgrade (V0.7) -----------------------------------
+route("POST", "/api/self/gaps/detect", () => ({ gaps: selfExt.detectGaps() }));
+route("POST", "/api/self/gaps", (body) => {
+  const g = selfExt.createGap(body);
+  return g.error ? { ...g, _status: 400 } : { gap: g };
+});
+route("GET", "/api/self/gaps", (_b, q) => (q.id ? { gap: selfExt.getGap(q.id) } : { gaps: selfExt.listGaps() }));
+
+route("POST", "/api/self/research/run", async (body) => {
+  const gap = selfExt.getGap(body.gap_id);
+  if (!gap) return { error: "gap not found", _status: 404 };
+  return { report: await research.runResearch(gap, {}) };
+});
+route("POST", "/api/self/github/search", async (body) => {
+  const gap = selfExt.getGap(body.gap_id);
+  if (!gap) return { error: "gap not found", _status: 404 };
+  return await research.githubSearch(gap, { candidates: body.candidates });
+});
+route("POST", "/api/self/github/evaluate-repo", (body) => {
+  if (!body.gap_id || !body.meta) return { error: "gap_id and meta required", _status: 400 };
+  return { candidate: selfExt.saveCandidate(body.gap_id, body.meta) };
+});
+route("GET", "/api/self/candidates", (_b, q) => ({ candidates: selfExt.listCandidates(q.gap_id) }));
+
+route("POST", "/api/self/skills/create", (body) => {
+  const s = selfExt.createSkill(body);
+  return s.error ? { ...s, _status: 400 } : { skill: s };
+});
+route("GET", "/api/self/skills", (_b, q) => (q.id ? { skill: selfExt.getSkill(q.id) } : { skills: selfExt.listSkills() }));
+
+route("POST", "/api/self/sandbox/create", (body) => sandbox.createSandbox(body));
+route("POST", "/api/self/sandbox/inspect", (body) => ({ inspection: sandbox.inspectPackage(body.manifest || {}) }));
+route("POST", "/api/self/sandbox/install", (body) => sandbox.install(body));
+route("POST", "/api/self/sandbox/audit", (body) => sandbox.audit(body));
+route("POST", "/api/self/sandbox/destroy", (body) => sandbox.destroy(body));
+
+route("POST", "/api/self/upgrade/proposal", (body) => {
+  const r = selfUpgrade.proposeUpgrade(body);
+  return r.error ? { ...r, _status: r._status || 400 } : r;
+});
+route("GET", "/api/self/upgrade/proposals", () => ({ proposals: selfExt.listProposals() }));
+route("POST", "/api/self/upgrade/delegate", (body) => selfUpgrade.delegate(body));
+route("POST", "/api/self/upgrade/verify", (body) => selfUpgrade.verify(body));
+route("POST", "/api/self/upgrade/request-approval", (body) => selfUpgrade.requestApproval(body));
+route("POST", "/api/self/upgrade/apply", (body) => selfUpgrade.apply(body));
+route("POST", "/api/self/upgrade/rollback", (body) => selfUpgrade.rollback(body));
+
 // --- test center ------------------------------------------------------------
 route("GET", "/api/tests", () => listTests());
 route("POST", "/api/tests/run", async () => {
@@ -372,6 +424,7 @@ if (isMain) {
   loadPersisted();
   loadPersistedScheduler();
   loadPersistedContracts();
+  loadPersistedSelfExt();
   // Scheduler tick loop — fires due tasks unattended (high-risk tasks park as
   // pending_approval inside runTask).
   setInterval(() => {
@@ -380,6 +433,6 @@ if (isMain) {
   const port = Number(process.env.PORT) || 4007;
   createApp().listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`TFNK Agent OS v0.5 listening on http://localhost:${port}`);
+    console.log(`TFNK Agent OS v0.7 listening on http://localhost:${port}`);
   });
 }

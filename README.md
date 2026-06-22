@@ -1,4 +1,4 @@
-# TFNK Agent OS — V0.5 (Scheduled Delivery Verification Build)
+# TFNK Agent OS — V0.7 (Self-Extension & Self-Upgrade Build)
 
 > A **verifiable, controllable, repairable** computer-agent foundation.
 > Not a chatbot with decorative buttons. The iron rule of this codebase:
@@ -6,9 +6,10 @@
 > **Every button → a registered action → a real API → a real test → a trace.**
 
 This implements the *TFNK Agent vNext+* blueprint (Phases 1–3) plus the *V0.4
-Cross-Device Vision Agent* and *V0.5 Scheduled Delivery Verification* builds. It is
-fully runnable today with **zero external dependencies** (Node ≥ 20 only — no
-`npm install` required) so it works in restricted/offline environments.
+Cross-Device Vision*, *V0.5 Scheduled Delivery Verification* and *V0.7
+Self-Extension* builds. It is fully runnable today with **zero external
+dependencies** (Node ≥ 20 only — no `npm install` required) so it works in
+restricted/offline environments.
 
 ---
 
@@ -47,6 +48,13 @@ fully runnable today with **zero external dependencies** (Node ≥ 20 only — n
 | **Real Usage Runner** (proves a feature is usable) | ✅ V0.5 | `backend/agents/realUsage.js` |
 | **Codex/Claude prompt + repair generators** | ✅ V0.5 | `backend/agents/promptGen.js` |
 | **Scheduler + Delivery Acceptance UI** | ✅ V0.5 | `frontend/` |
+| **Capability Gap Detector** (self-audit) | ✅ V0.7 | `backend/lib/selfExt.js` |
+| **Candidate scoring rubric** (license/maintenance/security/…) | ✅ V0.7 | `backend/lib/selfExt.js` |
+| **Research + GitHub Scout** (network-gated, honest) | ✅ V0.7 | `backend/agents/research.js` |
+| **Sandbox Inspector** (static; gated install) | ✅ V0.7 | `backend/agents/sandbox.js` |
+| **Self-Upgrade Orchestrator** (gated delegate/apply/rollback) | ✅ V0.7 | `backend/agents/selfUpgrade.js` |
+| **Self-Upgrade Center UI** | ✅ V0.7 | `frontend/` |
+| Live web/GitHub fetch + real package install | 🔌 gated/pluggable (network + approval required) | honest blocked status |
 | Live USB/RTSP/RTMP/HDMI capture + MediaPipe model | 🔌 pluggable (external worker via `/api/vision/ingest`) | honest capability detection |
 | Workflow Canvas | ⏳ Phase 4 (declared, disabled) | registry `implemented:false` |
 
@@ -76,7 +84,7 @@ real camera/RTSP stream here — and the project's iron rule forbids faking. So:
 
 ```bash
 npm start            # serve UI + API on http://localhost:4007
-npm test             # run the real test suite (57 tests)
+npm test             # run the real test suite (70 tests)
 npm run audit        # run the UI Audit Agent from the CLI
 ```
 
@@ -105,7 +113,7 @@ The audit distinguishes three honest non-problems from genuine fakes:
 broken`) fail the audit and CI.
 
 Run `npm run audit` to see the live report. Current build:
-**30 connected, ~15 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
+**37 connected, ~16 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
 
 ---
 
@@ -190,6 +198,18 @@ Hard rules baked into code:
 | POST | `/api/deliveries/accept` · `/reject` · `/request-repair` | acceptance decision |
 | POST | `/api/real-usage/run` | execute a real-usage scenario |
 
+### V0.7 — self-extension & self-upgrade
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/self/gaps/detect` · POST/GET `/api/self/gaps` | detect / create / list capability gaps |
+| POST | `/api/self/research/run` | research a gap (honest about network limits) |
+| POST | `/api/self/github/search` · `/evaluate-repo` | score candidate libraries (real rubric) |
+| POST/GET | `/api/self/skills/create` · `/api/self/skills` | package + list skills |
+| POST | `/api/self/sandbox/create` · `/inspect` · `/install` · `/audit` · `/destroy` | sandbox (gated install) |
+| POST/GET | `/api/self/upgrade/proposal` · `/proposals` | upgrade proposals |
+| POST | `/api/self/upgrade/delegate` · `/verify` · `/request-approval` · `/apply` · `/rollback` | gated upgrade lifecycle |
+
 ---
 
 ## Architecture
@@ -217,6 +237,9 @@ backend/
     realUsage.js       Real Usage Runner [V0.5]
     delivery.js        Delivery Verification (acceptance officer) [V0.5]
     promptGen.js       Codex/Claude prompt + repair generators [V0.5]
+    research.js        Research Agent + GitHub Scout (gated) [V0.7]
+    sandbox.js         Sandbox Inspector (gated install) [V0.7]
+    selfUpgrade.js     Self-Upgrade Orchestrator (gated) [V0.7]
     testCenter.js      runs the real test suite as a child process
   lib/
     device.js          device identity + peers + pairing/trust [V0.4]
@@ -225,14 +248,15 @@ backend/
     gestures.js        gesture mappings + Gesture Action Mapper [V0.4]
     scheduler.js       Scheduler Service (once/interval/cron) [V0.5]
     contracts.js       Requirement Contract store [V0.5]
+    selfExt.js         gaps + candidate scoring + skills + proposals [V0.7]
   cli/audit.js         `npm run audit`
 data/
   action_registry.json action source of truth
   ui_control_map.json  UI→action bindings
   gesture_mappings.json gesture→action bindings [V0.4]
   samples/             gestures_demo.jsonl replay fixture [V0.4]
-frontend/              Command Center + Vision + Devices + Scheduler + Delivery
-test/                  api / agents / phase23 / v04 / v05 (.test.js) — 57 tests, all green
+frontend/              Command Center + Vision + Devices + Scheduler + Delivery + Self-Upgrade
+test/                  api / agents / phase23 / v04 / v05 / v07 (.test.js) — 70 tests, all green
 .github/workflows/     ci.yml — runs the suite + audit on Node 20 & 22
 ```
 
@@ -243,8 +267,25 @@ test/                  api / agents / phase23 / v04 / v05 (.test.js) — 57 test
 - **Phase 3** — ✅ Computer Use layer (screenshot / click / type / observe / verify), in-app virtual screen.
 - **V0.4** — ✅ Cross-device LAN collaboration (discovery / pairing / trust / delegation) + safe gesture control (camera adapters, gesture→action mapper, vision pipeline).
 - **V0.5** — ✅ Scheduler (once/interval/cron) + Requirement Contracts + Delivery Verification (TFNK as acceptance officer for Codex/Claude) + Real Usage Runner.
+- **V0.7** — ✅ Self-extension: capability-gap detection, candidate scoring, research/scout, sandbox inspection, and a permission-gated self-upgrade lifecycle.
 - **Phase 4** — ⏳ Workflow Canvas (trigger / agent / tool / approval / retry nodes).
 - **Phase 5** — ⏳ Engineering agent (issue → branch → edit → test → PR → rollback).
+
+### V0.7 self-upgrade honesty boundary
+
+TFNK may propose its own upgrades but **never installs unknown code or rewrites
+itself unattended**. In this zero-dep, network-restricted environment:
+- **Research / GitHub fetch** is injectable; with no network it returns
+  `honest_status: blocked` (reason `no_network`) and **fabricates nothing**.
+  Candidate **scoring** is real and deterministic (stars are a minor signal;
+  unknown license ⇒ `needs_manual_review`; shell/binary/secret/install-script ⇒ high risk).
+- **Sandbox install** is statically inspected (dangerous lifecycle scripts /
+  network calls / secret access detected) and **permission-gated**; it is not
+  executed here — a manifest is written for an external networked runner.
+- **`delegate` is high-risk and `apply`/`rollback` are critical** — all
+  permission-gated. `apply` (even when approved) records the verified proposal +
+  rollback plan as `applied_pending_merge`; it does **not** auto-modify TFNK's
+  source. The real merge happens via PR/CI.
 
 ### V0.5 delivery-acceptance honesty boundary
 

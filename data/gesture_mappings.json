@@ -1,0 +1,13 @@
+{
+  "version": "0.4.0",
+  "description": "Maps recognised hand gestures to TFNK actions. Every action_id here MUST exist in action_registry.json — a gesture can never trigger an unregistered action, and every mapping resolves through the Permission Controller for risk gating. Emergency stop is the only critical gesture allowed to execute without a confirmation step.",
+  "mappings": [
+    { "gesture_id": "open_palm_stop", "gesture_name": "Open Palm Stop", "action_id": "loop.stop", "min_confidence": 0.85, "cooldown_ms": 1200, "risk_level": "low", "requires_confirmation": false, "enabled": true },
+    { "gesture_id": "fist_hold", "gesture_name": "Fist Hold", "action_id": "loop.status", "min_confidence": 0.85, "cooldown_ms": 1200, "risk_level": "low", "requires_confirmation": false, "enabled": true },
+    { "gesture_id": "ok_confirm", "gesture_name": "OK Confirm", "action_id": "permission.decide", "min_confidence": 0.9, "cooldown_ms": 1500, "risk_level": "low", "requires_confirmation": false, "enabled": true },
+    { "gesture_id": "thumbs_up_accept", "gesture_name": "Thumbs Up Accept", "action_id": "ui.audit", "min_confidence": 0.9, "cooldown_ms": 1500, "risk_level": "low", "requires_confirmation": false, "enabled": true },
+    { "gesture_id": "point_right_next", "gesture_name": "Point Right Next", "action_id": "agent.step.run", "min_confidence": 0.88, "cooldown_ms": 1000, "risk_level": "medium", "requires_confirmation": false, "enabled": true },
+    { "gesture_id": "two_hands_cross_emergency", "gesture_name": "Two Hands Cross Emergency", "action_id": "emergency.stop", "min_confidence": 0.95, "cooldown_ms": 3000, "risk_level": "critical", "requires_confirmation": false, "enabled": true },
+    { "gesture_id": "wave_cancel", "gesture_name": "Wave Cancel", "action_id": "agent.repair", "min_confidence": 0.9, "cooldown_ms": 2000, "risk_level": "high", "requires_confirmation": true, "enabled": true }
+  ]
+}

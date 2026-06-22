@@ -1,0 +1,63 @@
+{
+  "version": "0.3.0",
+  "description": "Declares every interactive element rendered by the frontend and which registry action it is bound to. The UI Audit Agent reconciles this map against the live DOM and the action registry; mismatches are reported as fake_or_unmapped.",
+  "screens": [
+    {
+      "screen": "AgentCommandCenter",
+      "elements": [
+        { "id": "btn_new_session", "type": "button", "label": "New Agent Session", "action_id": "agent.session.create" },
+        { "id": "btn_generate_plan", "type": "button", "label": "Generate Plan", "action_id": "agent.plan" },
+        { "id": "btn_run_step", "type": "button", "label": "Run Step", "action_id": "agent.step.run" },
+        { "id": "btn_verify", "type": "button", "label": "Verify", "action_id": "agent.verify" },
+        { "id": "btn_auto_repair", "type": "button", "label": "Auto Repair", "action_id": "agent.repair" },
+        { "id": "btn_ui_audit", "type": "button", "label": "Audit UI", "action_id": "ui.audit" },
+        { "id": "btn_start_loop", "type": "button", "label": "Start LOOP", "action_id": "loop.start" },
+        { "id": "btn_stop_loop", "type": "button", "label": "Stop LOOP", "action_id": "loop.stop" },
+        { "id": "btn_loop_status", "type": "button", "label": "Refresh LOOP status", "action_id": "loop.status" },
+        { "id": "btn_emergency_stop", "type": "button", "label": "EMERGENCY STOP", "action_id": "emergency.stop" },
+        { "id": "btn_run_tests", "type": "button", "label": "Run Tests", "action_id": "tests.run" },
+        { "id": "btn_permission_decide", "type": "button", "label": "Approve / Deny", "action_id": "permission.decide" },
+        { "id": "btn_run_auto", "type": "button", "label": "Run Autonomously", "action_id": "agent.run" },
+        { "id": "btn_memory_write", "type": "button", "label": "Save to Memory", "action_id": "memory.write" },
+        { "id": "btn_memory_search", "type": "button", "label": "Search Memory", "action_id": "memory.search" },
+        { "id": "btn_screenshot", "type": "button", "label": "Screenshot (virtual)", "action_id": "computer.screenshot" },
+        { "id": "btn_computer_click", "type": "button", "label": "Computer Click", "action_id": "computer.click" },
+        { "id": "btn_computer_type", "type": "button", "label": "Computer Type", "action_id": "computer.type" },
+        { "id": "btn_discover", "type": "button", "label": "Discover TFNK Devices", "action_id": "devices.discover" },
+        { "id": "btn_pair", "type": "button", "label": "Pair Device", "action_id": "devices.pair" },
+        { "id": "btn_camera_start", "type": "button", "label": "Start Camera Input", "action_id": "camera.start" },
+        { "id": "btn_vision_start", "type": "button", "label": "Start Vision Recognition", "action_id": "vision.start" },
+        { "id": "btn_vision_stop", "type": "button", "label": "Stop Vision Recognition", "action_id": "vision.stop" },
+        { "id": "btn_gesture_map", "type": "button", "label": "Map Gesture to Action", "action_id": "gesture.map_action" },
+        { "id": "btn_contract_create", "type": "button", "label": "Create Requirement Contract", "action_id": "contract.create" },
+        { "id": "btn_sched_create", "type": "button", "label": "Create Scheduled Task", "action_id": "scheduler.task.create" },
+        { "id": "btn_sched_run_now", "type": "button", "label": "Run Scheduled Task Now", "action_id": "scheduler.task.run_now" },
+        { "id": "btn_delivery_intake", "type": "button", "label": "Intake External Agent Delivery", "action_id": "delivery.intake" },
+        { "id": "btn_delivery_verify", "type": "button", "label": "Verify Delivery", "action_id": "delivery.verify" },
+        { "id": "btn_delivery_accept", "type": "button", "label": "Accept Delivery", "action_id": "delivery.accept" },
+        { "id": "btn_real_usage", "type": "button", "label": "Run Real Usage Scenario", "action_id": "real_usage.run" },
+        { "id": "btn_self_detect", "type": "button", "label": "Detect Capability Gaps", "action_id": "self.gaps.detect" },
+        { "id": "btn_self_research", "type": "button", "label": "Run Self Research", "action_id": "self.research.run" },
+        { "id": "btn_self_github", "type": "button", "label": "Search GitHub Libraries", "action_id": "self.github.search" },
+        { "id": "btn_self_sandbox", "type": "button", "label": "Install Candidate in Sandbox", "action_id": "self.sandbox.install" },
+        { "id": "btn_self_delegate", "type": "button", "label": "Delegate Self Upgrade", "action_id": "self.upgrade.delegate" },
+        { "id": "btn_self_apply", "type": "button", "label": "Apply Self Upgrade", "action_id": "self.upgrade.apply" },
+        { "id": "btn_self_rollback", "type": "button", "label": "Rollback Self Upgrade", "action_id": "self.upgrade.rollback" },
+        { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
+      ]
+    },
+    {
+      "screen": "OmHudInterface",
+      "elements": [
+        { "id": "btn_hud_anim", "type": "button", "label": "Toggle HUD Animation", "action_id": "hud.toggle_animation" },
+        { "id": "btn_hud_telemetry", "type": "button", "label": "Refresh Telemetry", "action_id": "hud.telemetry.refresh" },
+        { "id": "btn_hud_omgraph", "type": "button", "label": "Load OM Relation Graph", "action_id": "om.graph.load" },
+        { "id": "btn_hud_weather", "type": "button", "label": "Refresh Hong Kong Weather", "action_id": "weather.hk.refresh" },
+        { "id": "btn_hud_newchat", "type": "button", "label": "New Chat", "action_id": "chat.new" },
+        { "id": "btn_hud_send", "type": "button", "label": "Send Chat Message", "action_id": "chat.message.send" },
+        { "id": "btn_hud_savelayout", "type": "button", "label": "Save HUD Layout", "action_id": "hud.layout.save" },
+        { "id": "btn_estop", "type": "button", "label": "Emergency Stop", "action_id": "emergency.stop" }
+      ]
+    }
+  ]
+}

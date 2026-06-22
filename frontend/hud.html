@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TFNK — OM HUD Command Interface</title>
+    <link rel="stylesheet" href="/hud.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="brand">TFNK · OM HUD</span>
+      <span class="seg">LOOP: <b id="t_loop">—</b></span>
+      <span class="seg">Agent: <b id="t_agent">online</b></span>
+      <span class="seg">Claude · Codex</span>
+      <span class="seg">Devices: <b id="t_peers">0</b></span>
+      <span class="seg">HK: <b id="t_weather">—</b></span>
+      <span class="spacer"></span>
+      <a class="link" href="/">← Command Center</a>
+      <button class="estop" id="btn_estop" data-action="emergency.stop" data-label="Emergency Stop">■ EMERGENCY STOP</button>
+    </header>
+
+    <div class="stage">
+      <!-- Left dock: telemetry + controls -->
+      <aside class="dock left">
+        <h3>Telemetry</h3>
+        <div class="metric"><span class="k">CPU</span><span class="v" id="m_cpu">—</span></div>
+        <div class="metric"><span class="k">RAM</span><span class="v" id="m_ram">—</span></div>
+        <div class="metric"><span class="k">GPU</span><span class="v" id="m_gpu">—</span></div>
+        <div class="metric"><span class="k">GPU Temp</span><span class="v" id="m_gputemp">—</span></div>
+        <div class="metric"><span class="k">VRAM</span><span class="v" id="m_vram">—</span></div>
+        <div class="metric"><span class="k">Net</span><span class="v" id="m_net">—</span></div>
+        <div class="metric"><span class="k">Disk</span><span class="v" id="m_disk">—</span></div>
+        <div class="metric"><span class="k">LAN peers</span><span class="v" id="m_peers">—</span></div>
+
+        <h3>Controls</h3>
+        <button class="hud-btn" id="btn_hud_telemetry" data-action="hud.telemetry.refresh" data-label="Refresh Telemetry">↻ Refresh Telemetry</button>
+        <button class="hud-btn" id="btn_hud_omgraph" data-action="om.graph.load" data-label="Load OM Relation Graph">⊹ Reload OM Graph</button>
+        <button class="hud-btn" id="btn_hud_weather" data-action="weather.hk.refresh" data-label="Refresh Hong Kong Weather">☂ Refresh HK Weather</button>
+        <button class="hud-btn" id="btn_hud_anim" data-action="hud.toggle_animation" data-label="Toggle HUD Animation">◐ Toggle Animation</button>
+        <button class="hud-btn" id="btn_hud_savelayout" data-action="hud.layout.save" data-label="Save HUD Layout">▣ Save Layout</button>
+      </aside>
+
+      <!-- Center HUD -->
+      <main class="center">
+        <div class="hud-wrap">
+          <svg class="hud-svg" viewBox="0 0 400 400" id="hud_svg">
+            <defs>
+              <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <g filter="url(#glow)">
+              <circle class="ring spin-cw-slow" cx="200" cy="200" r="190" stroke-width="1" stroke-dasharray="2 6" opacity="0.5" />
+              <circle class="ring spin-ccw" cx="200" cy="200" r="168" stroke-width="2" stroke-dasharray="40 14" opacity="0.7" />
+              <circle class="ring spin-cw" cx="200" cy="200" r="146" stroke-width="6" stroke-dasharray="3 9" opacity="0.55" />
+              <circle class="ring spin-cw-fast" cx="200" cy="200" r="120" stroke-width="2" stroke-dasharray="60 20" opacity="0.85" />
+              <circle class="ring pulse" cx="200" cy="200" r="96" stroke-width="1.5" opacity="0.6" />
+            </g>
+            <!-- OM relation graph injected here -->
+            <g id="om_graph"></g>
+          </svg>
+          <div class="om-core-label">
+            <div class="big" id="om_core_big">OM</div>
+            <div class="small" id="om_core_small">relation core</div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right dock: weather + chat -->
+      <aside class="dock right">
+        <h3>Hong Kong Weather</h3>
+        <div class="weatherbox" id="weatherbox"><div class="hint">loading…</div></div>
+
+        <h3>Chat Dock</h3>
+        <div class="tabrow" id="chat_tabs">
+          <button class="active" data-client="true" data-tab="tfnk">TFNK</button>
+          <button data-client="true" data-tab="claude">Claude</button>
+          <button data-client="true" data-tab="codex">Codex</button>
+        </div>
+        <button class="hud-btn" id="btn_hud_newchat" data-action="chat.new" data-label="New Chat">+ New Chat</button>
+        <div id="chat_sessions" class="hint">no sessions</div>
+      </aside>
+    </div>
+
+    <!-- Frameless transparent conversation table -->
+    <section class="chat-table" id="chat_table">
+      <div class="chat-head"><span class="dot"></span><span>OM Conversation</span><span class="spacer" style="flex:1"></span><button class="mini" id="chat_collapse" data-client="true">collapse</button></div>
+      <div class="chat-log" id="chat_log"><div class="hint">Start a conversation. TFNK replies via its Intent Classifier (no LLM connected in this build).</div></div>
+      <div class="chat-input">
+        <textarea id="chat_text" placeholder="Message TFNK…  (Enter to send, Shift+Enter newline)"></textarea>
+        <button class="hud-btn" id="btn_hud_send" data-action="chat.message.send" data-label="Send Chat Message" style="width:auto">Send</button>
+      </div>
+    </section>
+
+    <div id="toast" class="toast"></div>
+    <script src="/hud.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+// Loads and queries the Action Registry and UI Control Map. This is the
+// source of truth the whole "no fake UI" guarantee rests on.
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { ROOT } from "./store.js";
+
+let _actions = null;
+let _uiMap = null;
+
+export function loadActions() {
+  if (!_actions) {
+    const raw = readFileSync(join(ROOT, "data", "action_registry.json"), "utf8");
+    _actions = JSON.parse(raw);
+  }
+  return _actions;
+}
+
+export function loadUiMap() {
+  if (!_uiMap) {
+    const raw = readFileSync(join(ROOT, "data", "ui_control_map.json"), "utf8");
+    _uiMap = JSON.parse(raw);
+  }
+  return _uiMap;
+}
+
+export function getAction(actionId) {
+  return loadActions().actions.find((a) => a.id === actionId) || null;
+}
+
+// The set of API routes the server actually serves. Kept here so the UI Audit
+// Agent can confirm a registered action points at a route that truly exists,
+// rather than trusting the registry's own `implemented` flag.
+export const LIVE_ROUTES = new Set([
+  "GET /api/health",
+  "GET /api/actions",
+  "GET /api/ui-control-map",
+  "POST /api/agent/session",
+  "GET /api/agent/session",
+  "POST /api/agent/plan",
+  "POST /api/agent/step/run",
+  "POST /api/agent/verify",
+  "POST /api/agent/repair",
+  "POST /api/agent/audit",
+  "POST /api/agent/run",
+  "POST /api/memory/write",
+  "GET /api/memory/search",
+  "POST /api/computer/screenshot",
+  "POST /api/computer/click",
+  "POST /api/computer/type",
+  "POST /api/loop/run",
+  "GET /api/loop/status",
+  "POST /api/loop/stop",
+  "POST /api/emergency-stop",
+  "GET /api/logs",
+  "GET /api/tests",
+  "POST /api/tests/run",
+  "GET /api/permissions",
+  "POST /api/permissions/decide",
+  // V0.4 — cross-device + vision
+  "GET /api/device/info",
+  "GET /api/device/capabilities",
+  "GET /api/devices",
+  "POST /api/devices/discover",
+  "POST /api/devices/announce",
+  "POST /api/devices/pair",
+  "POST /api/devices/trust",
+  "POST /api/devices/delegate-task",
+  "GET /api/devices/tasks",
+  "GET /api/camera/sources",
+  "POST /api/camera/source/add",
+  "POST /api/camera/source/test",
+  "POST /api/camera/start",
+  "POST /api/camera/stop",
+  "GET /api/camera/status",
+  "POST /api/vision/start",
+  "POST /api/vision/stop",
+  "GET /api/vision/status",
+  "POST /api/vision/ingest",
+  "POST /api/vision/replay",
+  "GET /api/vision/gestures/latest",
+  "GET /api/vision/events",
+  "GET /api/gestures",
+  "POST /api/gestures/map",
+  "POST /api/gestures/test",
+  "POST /api/gestures/enable",
+  "POST /api/gestures/disable",
+  "GET /api/events/recent",
+  // V0.5 — scheduler + delivery verification + real usage
+  "POST /api/scheduler/tasks",
+  "GET /api/scheduler/tasks",
+  "POST /api/scheduler/tasks/run-now",
+  "POST /api/scheduler/tasks/enable",
+  "POST /api/scheduler/tasks/disable",
+  "POST /api/scheduler/tasks/delete",
+  "GET /api/scheduler/runs",
+  "GET /api/scheduler/run",
+  "POST /api/contracts",
+  "GET /api/contracts",
+  "POST /api/contracts/codex-prompt",
+  "POST /api/contracts/claude-prompt",
+  "POST /api/deliveries/intake",
+  "GET /api/deliveries",
+  "POST /api/deliveries/verify",
+  "POST /api/deliveries/accept",
+  "POST /api/deliveries/reject",
+  "POST /api/deliveries/request-repair",
+  "POST /api/real-usage/run",
+  // V0.7 — self-extension & self-upgrade
+  "POST /api/self/gaps/detect",
+  "POST /api/self/gaps",
+  "GET /api/self/gaps",
+  "POST /api/self/research/run",
+  "POST /api/self/github/search",
+  "POST /api/self/github/evaluate-repo",
+  "GET /api/self/candidates",
+  "POST /api/self/skills/create",
+  "GET /api/self/skills",
+  "POST /api/self/sandbox/create",
+  "POST /api/self/sandbox/inspect",
+  "POST /api/self/sandbox/install",
+  "POST /api/self/sandbox/audit",
+  "POST /api/self/sandbox/destroy",
+  "POST /api/self/upgrade/proposal",
+  "GET /api/self/upgrade/proposals",
+  "POST /api/self/upgrade/delegate",
+  "POST /api/self/upgrade/verify",
+  "POST /api/self/upgrade/request-approval",
+  "POST /api/self/upgrade/apply",
+  "POST /api/self/upgrade/rollback",
+  // V0.8 — OM HUD interface
+  "GET /api/hud/state",
+  "POST /api/hud/animation/toggle",
+  "POST /api/hud/theme/update",
+  "GET /api/hud/layout",
+  "POST /api/hud/layout/save",
+  "GET /api/telemetry/system",
+  "POST /api/telemetry/refresh",
+  "GET /api/telemetry/gpu",
+  "GET /api/telemetry/network",
+  "GET /api/telemetry/disk",
+  "GET /api/om/graph",
+  "GET /api/om/graph/node",
+  "GET /api/om/memory/recent",
+  "GET /api/weather/hong-kong",
+  "GET /api/weather/hong-kong/rainfall",
+  "GET /api/weather/hong-kong/alerts",
+  "GET /api/chat/sessions",
+  "POST /api/chat/session/new",
+  "GET /api/chat/session",
+  "POST /api/chat/message",
+  "POST /api/chat/session/pin-to-hud",
+]);
+
+export function routeExists(method, api) {
+  return LIVE_ROUTES.has(`${method.toUpperCase()} ${api}`);
+}
+
+// Compute display status for an action per the blueprint's UI display rules.
+export function actionStatus(action) {
+  if (!action) return "fake_or_unmapped";
+  if (!action.implemented) return "backend_missing";
+  if (!routeExists(action.method, action.api)) return "backend_missing";
+  if (action.risk === "high" || action.risk === "critical") {
+    return action.fallback === "request_permission"
+      ? "permission_required"
+      : "connected";
+  }
+  return "connected";
+}

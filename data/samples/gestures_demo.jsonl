@@ -1,0 +1,11 @@
+{"fps":30,"resolution":"1920x960","projection_type":"equirectangular","latency_ms":80,"note":"first line is the stream header; each subsequent line is one frame's recognised gesture (as a MediaPipe-style worker would emit)"}
+{"frame_id":"f001","gesture_id":"open_palm_stop","confidence":0.91,"handedness":"right"}
+{"frame_id":"f002","gesture_id":"open_palm_stop","confidence":0.93,"handedness":"right"}
+{"frame_id":"f003","gesture_id":"open_palm_stop","confidence":0.9,"handedness":"right"}
+{"frame_id":"f004","gesture_id":"unknown","confidence":0.2}
+{"frame_id":"f005","gesture_id":"two_hands_cross_emergency","confidence":0.97}
+{"frame_id":"f006","gesture_id":"two_hands_cross_emergency","confidence":0.98}
+{"frame_id":"f007","gesture_id":"two_hands_cross_emergency","confidence":0.96}
+{"frame_id":"f008","gesture_id":"wave_cancel","confidence":0.95}
+{"frame_id":"f009","gesture_id":"wave_cancel","confidence":0.94}
+{"frame_id":"f010","gesture_id":"wave_cancel","confidence":0.95}

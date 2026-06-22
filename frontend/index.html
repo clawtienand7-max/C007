@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TFNK Agent OS</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">TFNK <span>Agent OS</span> <em>v0.3</em></div>
+      <div class="status-pills">
+        <span id="pill_health" class="pill">backend ●</span>
+        <span id="pill_loop" class="pill">loop: idle</span>
+        <span class="pill safe">Safe Mode</span>
+        <a class="pill" href="/hud" style="text-decoration:none" data-client="true">◎ OM HUD →</a>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- Sidebar: Agent Command Center -->
+      <section class="panel sidebar">
+        <h2>Command Center</h2>
+
+        <div class="group">
+          <label for="goal_input">Task goal</label>
+          <textarea id="goal_input" rows="3" placeholder="e.g. Audit and repair fake UI in TFNK"></textarea>
+          <button id="btn_new_session" data-action="agent.session.create" data-label="New Agent Session">New Agent Session</button>
+          <button id="btn_generate_plan" data-action="agent.plan" data-label="Generate Plan">Generate Plan</button>
+          <button id="btn_run_step" data-action="agent.step.run" data-label="Run Step">Run Next Step</button>
+          <button id="btn_verify" data-action="agent.verify" data-label="Verify">Verify</button>
+        </div>
+
+        <div class="group">
+          <h3>Audit &amp; Repair</h3>
+          <button id="btn_ui_audit" data-action="ui.audit" data-label="Audit UI">Audit UI</button>
+          <button id="btn_auto_repair" data-action="agent.repair" data-label="Auto Repair">Auto Repair</button>
+        </div>
+
+        <div class="group">
+          <h3>LOOP</h3>
+          <button id="btn_start_loop" data-action="loop.start" data-label="Start LOOP">Start LOOP</button>
+          <button id="btn_stop_loop" data-action="loop.stop" data-label="Stop LOOP">Stop LOOP</button>
+          <button id="btn_loop_status" data-action="loop.status" data-label="Refresh LOOP status">Refresh Status</button>
+        </div>
+
+        <div class="group">
+          <h3>Test Center</h3>
+          <button id="btn_run_tests" data-action="tests.run" data-label="Run Tests">Run Tests</button>
+        </div>
+
+        <div class="group">
+          <h3>Autonomy &amp; Memory</h3>
+          <button id="btn_run_auto" data-action="agent.run" data-label="Run Autonomously">▶ Run Autonomously</button>
+          <input id="memory_input" placeholder="remember a rule / fact…" data-client="true" />
+          <button id="btn_memory_write" data-action="memory.write" data-label="Save to Memory">Save to Memory</button>
+          <button id="btn_memory_search" data-action="memory.search" data-label="Search Memory">Search Memory</button>
+        </div>
+
+        <div class="group">
+          <h3>Computer Use (Phase 3)</h3>
+          <button id="btn_screenshot" data-action="computer.screenshot" data-label="Screenshot (virtual)">Screenshot (virtual)</button>
+          <input id="click_input" placeholder="ui_id to click, e.g. btn_loop_status" data-client="true" />
+          <button id="btn_computer_click" data-action="computer.click" data-label="Computer Click">Computer Click</button>
+          <button id="btn_computer_type" data-action="computer.type" data-label="Computer Type">Computer Type (into goal)</button>
+        </div>
+
+        <div class="group">
+          <h3>Cross-Device (V0.4)</h3>
+          <button id="btn_discover" data-action="devices.discover" data-label="Discover TFNK Devices">Discover Devices</button>
+          <input id="pair_node_input" placeholder="peer node_id to pair" data-client="true" />
+          <button id="btn_pair" data-action="devices.pair" data-label="Pair Device">Pair Device</button>
+        </div>
+
+        <div class="group">
+          <h3>Vision Control (V0.4)</h3>
+          <button id="btn_camera_start" data-action="camera.start" data-label="Start Camera Input">Start Camera (test source)</button>
+          <button id="btn_vision_start" data-action="vision.start" data-label="Start Vision Recognition">Start Vision</button>
+          <button id="btn_vision_stop" data-action="vision.stop" data-label="Stop Vision Recognition">Stop Vision</button>
+          <button id="btn_gesture_map" data-action="gesture.map_action" data-label="Map Gesture to Action">Reload Gesture Map</button>
+        </div>
+
+        <div class="group">
+          <h3>Scheduler (V0.5)</h3>
+          <input id="sched_name_input" placeholder="task name" data-client="true" />
+          <button id="btn_sched_create" data-action="scheduler.task.create" data-label="Create Scheduled Task">+ New Health-Check Task</button>
+          <button id="btn_sched_run_now" data-action="scheduler.task.run_now" data-label="Run Scheduled Task Now">Run Selected Now</button>
+        </div>
+
+        <div class="group">
+          <h3>Delivery Acceptance (V0.5)</h3>
+          <button id="btn_contract_create" data-action="contract.create" data-label="Create Requirement Contract">New Requirement Contract</button>
+          <button id="btn_delivery_intake" data-action="delivery.intake" data-label="Intake External Agent Delivery">Intake Delivery</button>
+          <button id="btn_delivery_verify" data-action="delivery.verify" data-label="Verify Delivery">Verify Delivery</button>
+          <button id="btn_delivery_accept" data-action="delivery.accept" data-label="Accept Delivery">Accept Delivery</button>
+          <button id="btn_real_usage" data-action="real_usage.run" data-label="Run Real Usage Scenario">Run Real Usage</button>
+        </div>
+
+        <div class="group">
+          <h3>Self-Upgrade (V0.7)</h3>
+          <button id="btn_self_detect" data-action="self.gaps.detect" data-label="Detect Capability Gaps">Detect Capability Gaps</button>
+          <button id="btn_self_research" data-action="self.research.run" data-label="Run Self Research">Run Research</button>
+          <button id="btn_self_github" data-action="self.github.search" data-label="Search GitHub Libraries">Search GitHub Libraries</button>
+          <button id="btn_self_sandbox" data-action="self.sandbox.install" data-label="Install Candidate in Sandbox">Sandbox Install</button>
+          <button id="btn_self_delegate" data-action="self.upgrade.delegate" data-label="Delegate Self Upgrade">Delegate Upgrade</button>
+          <button id="btn_self_apply" data-action="self.upgrade.apply" data-label="Apply Self Upgrade">Apply Upgrade</button>
+          <button id="btn_self_rollback" data-action="self.upgrade.rollback" data-label="Rollback Self Upgrade">Rollback</button>
+        </div>
+
+        <div class="group">
+          <h3>Future Phases</h3>
+          <button id="btn_run_workflow" data-action="workflow.run" data-label="Run Workflow (Phase 4)">Run Workflow (Phase 4)</button>
+        </div>
+
+        <div class="group danger">
+          <button id="btn_emergency_stop" data-action="emergency.stop" data-label="EMERGENCY STOP">■ EMERGENCY STOP</button>
+        </div>
+      </section>
+
+      <!-- Main workspace -->
+      <section class="panel workspace">
+        <div class="tabs">
+          <button class="tab active" data-tab="timeline" data-client="true">Task Timeline</button>
+          <button class="tab" data-tab="audit" data-client="true">Action Inspector</button>
+          <button class="tab" data-tab="tests" data-client="true">Test Center</button>
+          <button class="tab" data-tab="computer" data-client="true">Computer View</button>
+          <button class="tab" data-tab="memory" data-client="true">Memory Center</button>
+          <button class="tab" data-tab="devices" data-client="true">Devices</button>
+          <button class="tab" data-tab="vision" data-client="true">Vision Control</button>
+          <button class="tab" data-tab="scheduler" data-client="true">Scheduler</button>
+          <button class="tab" data-tab="delivery" data-client="true">Delivery Acceptance</button>
+          <button class="tab" data-tab="selfupgrade" data-client="true">Self-Upgrade</button>
+          <button class="tab" data-tab="permissions" data-client="true">Permission Queue</button>
+        </div>
+
+        <div id="tab_timeline" class="tabpane active">
+          <h3>Agent Mind &amp; Timeline</h3>
+          <div id="agent_mind" class="mind">Idle. Create a session to begin.</div>
+          <ol id="timeline" class="timeline"></ol>
+        </div>
+
+        <div id="tab_audit" class="tabpane">
+          <h3>Action Inspector</h3>
+          <p class="hint">Every interactive control reconciled against the action registry, UI control map and live API routes.</p>
+          <div id="audit_summary" class="summary"></div>
+          <table class="data" id="audit_table">
+            <thead><tr><th>UI id</th><th>Action</th><th>Status</th><th>Reason</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div id="tab_tests" class="tabpane">
+          <h3>Test Center</h3>
+          <div id="tests_summary" class="summary"></div>
+          <pre id="tests_output" class="logbox"></pre>
+        </div>
+
+        <div id="tab_computer" class="tabpane">
+          <h3>Computer View <span class="hint">(in-app virtual screen)</span></h3>
+          <p class="hint">The agent observes TFNK's own registered surface, clicks real bound actions, and verifies the resulting state. It never clicks disabled or permission-gated controls.</p>
+          <pre id="computer_view" class="logbox"></pre>
+        </div>
+
+        <div id="tab_memory" class="tabpane">
+          <h3>Memory Center</h3>
+          <p class="hint">Project knowledge: rules, facts and past fixes the agent recalls across sessions.</p>
+          <div id="memory_list"></div>
+        </div>
+
+        <div id="tab_devices" class="tabpane">
+          <h3>Devices <span class="hint">(same-LAN collaboration)</span></h3>
+          <p class="hint">Discover peers over the LAN, pair with a 6-digit code, then delegate tasks. High-risk delegations require confirmation.</p>
+          <div id="devices_self" class="summary"></div>
+          <div id="devices_list"></div>
+        </div>
+
+        <div id="tab_vision" class="tabpane">
+          <h3>Vision Control Center <span class="hint">Camera <span id="cam_state">● idle</span></span></h3>
+          <p class="hint">Gesture → Action mapper. Recognition runs in an external worker (e.g. MediaPipe) and pushes frames to <code>/api/vision/ingest</code>; this panel shows the safety-gated decisions. A gesture must be stable across frames and pass risk/permission gating before anything executes.</p>
+          <div class="summary">
+            <div class="stat"><b id="vision_state">idle</b><span>vision</span></div>
+            <div class="stat"><b id="vision_frames">0</b><span>frames seen</span></div>
+            <div class="stat"><b id="vision_latest">—</b><span>latest gesture</span></div>
+          </div>
+          <h4>Gesture → Action mapping</h4>
+          <table class="data" id="gesture_table">
+            <thead><tr><th>Gesture</th><th>Action</th><th>Risk</th><th>Confirm</th><th>Min conf</th><th>Enabled</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <h4>Gesture timeline</h4>
+          <div id="gesture_timeline" class="logbox small"></div>
+        </div>
+
+        <div id="tab_scheduler" class="tabpane">
+          <h3>Scheduler Center</h3>
+          <p class="hint">Define recurring/one-time tasks. Run-now executes immediately; unattended high-risk tasks park as <code>pending_approval</code>. Every run writes a real task_run record.</p>
+          <h4>Tasks</h4>
+          <table class="data" id="sched_tasks_table">
+            <thead><tr><th>Name</th><th>Type</th><th>Schedule</th><th>Next run</th><th>Last run</th><th>Enabled</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <h4>Recent runs</h4>
+          <table class="data" id="sched_runs_table">
+            <thead><tr><th>Run</th><th>Task</th><th>Status</th><th>Verify</th><th>Finished</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div id="tab_delivery" class="tabpane">
+          <h3>Delivery Verification Center <span class="hint">TFNK is the final acceptance officer</span></h3>
+          <p class="hint">Codex / Claude deliveries are candidates until they pass: requirement match → diff safety → tests → UI/API audit → real usage. No evidence ⇒ not accepted.</p>
+          <div id="delivery_list"></div>
+        </div>
+
+        <div id="tab_selfupgrade" class="tabpane">
+          <h3>Self-Upgrade Center <span class="hint">research → sandbox → verify → approve</span></h3>
+          <p class="hint">TFNK proposes its own upgrades but never installs unknown code or rewrites itself unattended: install / delegate / apply / rollback are permission-gated, and web/GitHub fetch is honest about network limits (no fabricated sources).</p>
+          <h4>Capability Gaps</h4>
+          <div id="gaps_list"></div>
+          <h4>Candidate Libraries (scored)</h4>
+          <table class="data" id="candidates_table">
+            <thead><tr><th>Name</th><th>License</th><th>Score</th><th>Risk</th><th>Recommendation</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <h4>Upgrade Proposals</h4>
+          <div id="proposals_list"></div>
+        </div>
+
+        <div id="tab_permissions" class="tabpane">
+          <h3>Permission Queue</h3>
+          <p class="hint">High / critical risk actions wait here for your approval.</p>
+          <div id="permissions_list"></div>
+        </div>
+      </section>
+
+      <!-- Right dock -->
+      <section class="panel dock">
+        <h2>Trace Viewer</h2>
+        <button id="btn_refresh_logs" class="mini" data-client="true">Refresh logs</button>
+        <div id="logs" class="logbox small"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

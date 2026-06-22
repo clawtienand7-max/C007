@@ -19,6 +19,13 @@ import { listTests, runTests } from "./agents/testCenter.js";
 import { writeMemory, searchMemory } from "./lib/memory.js";
 import * as computerUse from "./agents/computerUse.js";
 import * as loopEngine from "./loop.js";
+import { deviceInfo, deviceCapabilities, listPeers, getPeer, beginPairing, confirmPairing } from "./lib/device.js";
+import * as discovery from "./lib/discovery.js";
+import * as crossDevice from "./agents/crossDevice.js";
+import * as camera from "./agents/cameraAdapter.js";
+import * as vision from "./agents/vision.js";
+import { listMappings, mapGesture, mapToAction, setEnabled } from "./lib/gestures.js";
+import { subscribe, recent as recentEvents } from "./lib/events.js";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -75,7 +82,7 @@ function route(method, path, handler) {
 }
 
 // --- meta -------------------------------------------------------------------
-route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.3.0", time: new Date().toISOString() }));
+route("GET", "/api/health", () => ({ ok: true, service: "tfnk-agent-os", version: "0.4.0", time: new Date().toISOString() }));
 
 route("GET", "/api/actions", () => {
   const reg = loadActions();
@@ -179,6 +186,75 @@ route("POST", "/api/permissions/decide", (body) => {
 // --- logs / trace -----------------------------------------------------------
 route("GET", "/api/logs", (_b, q) => ({ logs: getLogs({ limit: Number(q.limit) || 200, session_id: q.session_id }) }));
 
+// --- device / LAN (V0.4) ----------------------------------------------------
+route("GET", "/api/device/info", () => deviceInfo());
+route("GET", "/api/device/capabilities", () => deviceCapabilities());
+route("GET", "/api/devices", () => ({ self: deviceInfo(), peers: listPeers() }));
+route("POST", "/api/devices/discover", () => {
+  discovery.start();
+  const b = discovery.broadcast();
+  return { broadcast: b, peers: listPeers() };
+});
+// Peers (and tests) register presence by posting their announce packet.
+route("POST", "/api/devices/announce", (body) => {
+  const peer = discovery.handleAnnounce(body);
+  return peer ? { peer } : { error: "invalid announce", _status: 400 };
+});
+route("POST", "/api/devices/pair", (body) => {
+  const r = beginPairing(body.node_id);
+  return r.error ? { ...r, _status: 400 } : r;
+});
+route("POST", "/api/devices/trust", (body) => {
+  const r = confirmPairing(body.node_id, body.code);
+  return r.error ? { ...r, _status: 400 } : r;
+});
+route("GET", "/api/devices/status", (_b, q) => {
+  const p = getPeer(q.id);
+  return p ? { peer: p } : { error: "peer not found", _status: 404 };
+});
+route("POST", "/api/devices/delegate-task", (body) => crossDevice.delegate(body));
+route("GET", "/api/devices/tasks", () => ({ tasks: crossDevice.listTasks() }));
+
+// --- camera adapter (V0.4) --------------------------------------------------
+route("GET", "/api/camera/sources", () => ({ capabilities: camera.detectCapabilities(), sources: camera.listSources() }));
+route("POST", "/api/camera/source/add", (body) => {
+  const r = camera.addSource(body);
+  return r.error ? { ...r, _status: 400 } : r;
+});
+route("POST", "/api/camera/source/test", (body) => camera.testSource(body.source_id));
+route("POST", "/api/camera/start", (body) => {
+  const r = camera.testSource(body.source_id);
+  addLog({ agent: "CameraAdapter", event: "camera_start", detail: { source_id: body.source_id, connected: r.connected } });
+  return { started: r.connected === true, test: r };
+});
+route("POST", "/api/camera/stop", (body) => ({ stopped: true, source_id: body.source_id || null }));
+route("GET", "/api/camera/status", () => ({ capabilities: camera.detectCapabilities(), sources: camera.listSources() }));
+
+// --- vision / gestures (V0.4) -----------------------------------------------
+route("POST", "/api/vision/start", (body) => ({ status: vision.start(body) }));
+route("POST", "/api/vision/stop", () => ({ status: vision.stop() }));
+route("GET", "/api/vision/status", () => ({ status: vision.status() }));
+route("POST", "/api/vision/ingest", (body) => vision.ingest(body));
+route("POST", "/api/vision/replay", (body) => {
+  if (!body.source_id) return { error: "source_id required", _status: 400 };
+  return vision.replay(body.source_id);
+});
+route("GET", "/api/vision/gestures/latest", () => vision.latestGestures());
+route("GET", "/api/vision/events", () => vision.events());
+route("POST", "/api/vision/calibrate", (body) => ({ ok: true, primary_user: body.primary_user || "user_1", note: "calibration recorded; only the primary user is tracked" }));
+
+route("GET", "/api/gestures", () => ({ mappings: listMappings() }));
+route("POST", "/api/gestures/map", (body) => {
+  const r = mapGesture(body);
+  return r.error ? { ...r, _status: 400 } : r;
+});
+route("POST", "/api/gestures/test", (body) => mapToAction(body));
+route("POST", "/api/gestures/enable", (body) => setEnabled(body.gesture_id, true));
+route("POST", "/api/gestures/disable", (body) => setEnabled(body.gesture_id, false));
+
+// --- events -----------------------------------------------------------------
+route("GET", "/api/events/recent", (_b, q) => ({ events: recentEvents({ since: Number(q.since) || 0, limit: Number(q.limit) || 100 }) }));
+
 // --- test center ------------------------------------------------------------
 route("GET", "/api/tests", () => listTests());
 route("POST", "/api/tests/run", async () => {
@@ -202,6 +278,13 @@ export function createApp() {
     const pathname = url.pathname;
 
     if (!pathname.startsWith("/api/")) return serveStatic(req, res, pathname);
+
+    // Server-Sent Events stream (the cross-device / vision event channel).
+    if (req.method === "GET" && pathname === "/api/events") {
+      const detach = subscribe(res);
+      req.on("close", detach);
+      return;
+    }
 
     const handler = ROUTES[`${req.method} ${pathname}`];
     if (!handler) return json(res, 404, { error: "unknown route", route: `${req.method} ${pathname}` });
@@ -227,6 +310,6 @@ if (isMain) {
   const port = Number(process.env.PORT) || 4007;
   createApp().listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`TFNK Agent OS v0.3 listening on http://localhost:${port}`);
+    console.log(`TFNK Agent OS v0.4 listening on http://localhost:${port}`);
   });
 }

@@ -25,7 +25,7 @@ const post = (p, body) =>
 test("test_health: /api/health is live", async () => {
   const r = await get("/api/health");
   assert.equal(r.ok, true);
-  assert.equal(r.version, "0.3.0");
+  assert.equal(r.version, "0.4.0");
 });
 
 test("/api/actions annotates each action with a live status", async () => {

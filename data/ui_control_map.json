@@ -23,6 +23,12 @@
         { "id": "btn_screenshot", "type": "button", "label": "Screenshot (virtual)", "action_id": "computer.screenshot" },
         { "id": "btn_computer_click", "type": "button", "label": "Computer Click", "action_id": "computer.click" },
         { "id": "btn_computer_type", "type": "button", "label": "Computer Type", "action_id": "computer.type" },
+        { "id": "btn_discover", "type": "button", "label": "Discover TFNK Devices", "action_id": "devices.discover" },
+        { "id": "btn_pair", "type": "button", "label": "Pair Device", "action_id": "devices.pair" },
+        { "id": "btn_camera_start", "type": "button", "label": "Start Camera Input", "action_id": "camera.start" },
+        { "id": "btn_vision_start", "type": "button", "label": "Start Vision Recognition", "action_id": "vision.start" },
+        { "id": "btn_vision_stop", "type": "button", "label": "Stop Vision Recognition", "action_id": "vision.stop" },
+        { "id": "btn_gesture_map", "type": "button", "label": "Map Gesture to Action", "action_id": "gesture.map_action" },
         { "id": "btn_run_workflow", "type": "button", "label": "Run Workflow (Phase 4)", "action_id": "workflow.run" }
       ]
     }

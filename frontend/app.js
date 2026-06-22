@@ -59,6 +59,29 @@ async function bootstrap() {
   loadTestsInventory();
   loadPermissions();
   loadMemory();
+  loadDevices();
+  loadGestures();
+  loadVision();
+  subscribeEvents();
+}
+
+// Live event stream (SSE) — updates the gesture timeline and loop pill as
+// peer/vision events arrive.
+function subscribeEvents() {
+  try {
+    const es = new EventSource("/api/events");
+    es.onmessage = (m) => {
+      const e = JSON.parse(m.data);
+      if (e.event === "gesture.command.detected") {
+        addTimeline(`Gesture: ${e.gesture}`, `→ ${e.mapped_action} (${e.verification_result})`, e.executed ? "passed" : "");
+        loadVision();
+      } else if (e.event === "peer.online") {
+        loadDevices();
+      }
+    };
+  } catch {
+    /* EventSource unavailable; panels still work via manual refresh */
+  }
 }
 
 // --- handlers ---------------------------------------------------------------
@@ -181,6 +204,50 @@ const handlers = {
     addTimeline("Computer type → goal_input", `${data.verification} — ${data.reason}`, data.verification === "passed" ? "passed" : "");
     toast(`type: ${data.verification}`);
   },
+  "devices.discover": async () => {
+    const { data } = await api("/api/devices/discover", { method: "POST" });
+    addTimeline("Device discovery", `${data.peers.length} peer(s) on LAN`);
+    switchTab("devices");
+    loadDevices();
+    toast(`Discovery: ${data.peers.length} peer(s)`);
+  },
+  "devices.pair": async () => {
+    const node_id = $("#pair_node_input").value.trim();
+    if (!node_id) return toast("Enter a peer node_id");
+    const { data } = await api("/api/devices/pair", { method: "POST", body: { node_id } });
+    if (data.error) return toast(data.error);
+    addTimeline(`Pairing started for ${node_id}`, `code ${data.pairing_code} (enter on the peer)`);
+    toast(`Pairing code: ${data.pairing_code}`);
+  },
+  "camera.start": async () => {
+    // Demo path: register the shipped sample replay source, then test it.
+    const add = await api("/api/camera/source/add", { method: "POST", body: { type: "frames_jsonl", name: "Demo 360 replay", uri: "data/samples/gestures_demo.jsonl" } });
+    state.camSource = add.data.source.source_id;
+    const { data } = await api("/api/camera/start", { method: "POST", body: { source_id: state.camSource } });
+    $("#cam_state").textContent = data.started ? "● live (replay)" : "● failed";
+    addTimeline("Camera start", data.started ? `replay ${data.test.fps}fps ${data.test.resolution}` : data.test.error, data.started ? "passed" : "failed");
+    switchTab("vision");
+    toast(data.started ? "Camera ready (replay)" : "Camera failed");
+  },
+  "vision.start": async () => {
+    await api("/api/vision/start", { method: "POST", body: {} });
+    if (state.camSource) await api("/api/vision/replay", { method: "POST", body: { source_id: state.camSource } });
+    switchTab("vision");
+    await loadVision();
+    addTimeline("Vision started", state.camSource ? "replayed demo gestures" : "ingest mode");
+    toast("Vision running");
+  },
+  "vision.stop": async () => {
+    await api("/api/vision/stop", { method: "POST" });
+    $("#cam_state").textContent = "● idle";
+    await loadVision();
+    toast("Vision stopped");
+  },
+  "gesture.map_action": async () => {
+    await loadGestures();
+    switchTab("vision");
+    toast("Gesture map reloaded");
+  },
   "tests.run": async () => {
     switchTab("tests");
     $("#tests_summary").innerHTML = `<div class="stat"><b>…</b><span>running real test suite</span></div>`;
@@ -242,6 +309,49 @@ async function loadMemory(q = "") {
     data.results
       .map((e) => `<div class="perm" style="border-color:var(--border)"><b>${e.kind}</b> <span class="hint">${e.id}</span><div>${e.text}</div><div class="hint">tags: ${(e.tags || []).join(", ") || "—"}</div></div>`)
       .join("");
+}
+
+async function loadDevices() {
+  const { data } = await api("/api/devices");
+  $("#devices_self").innerHTML = `
+    <div class="stat"><b>${data.self.platform}</b><span>${data.self.device_name}</span></div>
+    <div class="stat"><b>${data.self.ip}:${data.self.port}</b><span>this node</span></div>
+    <div class="stat"><b>${data.peers.length}</b><span>peers</span></div>`;
+  const box = $("#devices_list");
+  if (!data.peers.length) {
+    box.innerHTML = `<p class="hint">No peers discovered yet. Run Discover Devices on each machine on the same Wi-Fi.</p>`;
+    return;
+  }
+  box.innerHTML = data.peers
+    .map((p) => `<div class="perm" style="border-color:var(--border)"><b>${p.device_name}</b> <span class="badge ${p.trusted ? "connected" : "permission_required"}">${p.trusted ? "trusted" : "untrusted"}</span><div class="hint">${p.platform} · ${p.ip}:${p.port} · ${p.node_id}</div><div class="hint">capabilities: ${(p.capabilities || []).join(", ")}</div></div>`)
+    .join("");
+}
+
+async function loadGestures() {
+  const { data } = await api("/api/gestures");
+  const tbody = $("#gesture_table tbody");
+  tbody.innerHTML = "";
+  for (const m of data.mappings) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${m.gesture_name}</td><td>${m.action_id}</td>
+      <td><span class="badge ${m.risk_level === "low" ? "connected" : m.risk_level === "medium" ? "backend_missing" : "fake_or_unmapped"}">${m.risk_level}</span></td>
+      <td>${m.requires_confirmation ? "yes" : "no"}</td><td>${m.min_confidence}</td><td>${m.enabled ? "✓" : "✕"}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+async function loadVision() {
+  const { data } = await api("/api/vision/status");
+  const s = data.status;
+  $("#vision_state").textContent = s.active ? "running" : "idle";
+  $("#vision_frames").textContent = s.frames_seen;
+  $("#vision_latest").textContent = s.latest_gesture ? s.latest_gesture.gesture_id : "—";
+  const ev = await api("/api/vision/events").then((r) => r.data.events || []);
+  $("#gesture_timeline").textContent = ev
+    .slice()
+    .reverse()
+    .map((e) => `${e.gesture_id} → ${e.action_id || "—"} | ${e.executed ? "executed" : "not-exec"} | ${e.verification_result}`)
+    .join("\n") || "(no gesture decisions yet)";
 }
 
 async function loadPermissions() {

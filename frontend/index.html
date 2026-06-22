@@ -65,6 +65,21 @@
         </div>
 
         <div class="group">
+          <h3>Cross-Device (V0.4)</h3>
+          <button id="btn_discover" data-action="devices.discover" data-label="Discover TFNK Devices">Discover Devices</button>
+          <input id="pair_node_input" placeholder="peer node_id to pair" data-client="true" />
+          <button id="btn_pair" data-action="devices.pair" data-label="Pair Device">Pair Device</button>
+        </div>
+
+        <div class="group">
+          <h3>Vision Control (V0.4)</h3>
+          <button id="btn_camera_start" data-action="camera.start" data-label="Start Camera Input">Start Camera (test source)</button>
+          <button id="btn_vision_start" data-action="vision.start" data-label="Start Vision Recognition">Start Vision</button>
+          <button id="btn_vision_stop" data-action="vision.stop" data-label="Stop Vision Recognition">Stop Vision</button>
+          <button id="btn_gesture_map" data-action="gesture.map_action" data-label="Map Gesture to Action">Reload Gesture Map</button>
+        </div>
+
+        <div class="group">
           <h3>Future Phases</h3>
           <button id="btn_run_workflow" data-action="workflow.run" data-label="Run Workflow (Phase 4)">Run Workflow (Phase 4)</button>
         </div>
@@ -82,6 +97,8 @@
           <button class="tab" data-tab="tests" data-client="true">Test Center</button>
           <button class="tab" data-tab="computer" data-client="true">Computer View</button>
           <button class="tab" data-tab="memory" data-client="true">Memory Center</button>
+          <button class="tab" data-tab="devices" data-client="true">Devices</button>
+          <button class="tab" data-tab="vision" data-client="true">Vision Control</button>
           <button class="tab" data-tab="permissions" data-client="true">Permission Queue</button>
         </div>
 
@@ -117,6 +134,30 @@
           <h3>Memory Center</h3>
           <p class="hint">Project knowledge: rules, facts and past fixes the agent recalls across sessions.</p>
           <div id="memory_list"></div>
+        </div>
+
+        <div id="tab_devices" class="tabpane">
+          <h3>Devices <span class="hint">(same-LAN collaboration)</span></h3>
+          <p class="hint">Discover peers over the LAN, pair with a 6-digit code, then delegate tasks. High-risk delegations require confirmation.</p>
+          <div id="devices_self" class="summary"></div>
+          <div id="devices_list"></div>
+        </div>
+
+        <div id="tab_vision" class="tabpane">
+          <h3>Vision Control Center <span class="hint">Camera <span id="cam_state">● idle</span></span></h3>
+          <p class="hint">Gesture → Action mapper. Recognition runs in an external worker (e.g. MediaPipe) and pushes frames to <code>/api/vision/ingest</code>; this panel shows the safety-gated decisions. A gesture must be stable across frames and pass risk/permission gating before anything executes.</p>
+          <div class="summary">
+            <div class="stat"><b id="vision_state">idle</b><span>vision</span></div>
+            <div class="stat"><b id="vision_frames">0</b><span>frames seen</span></div>
+            <div class="stat"><b id="vision_latest">—</b><span>latest gesture</span></div>
+          </div>
+          <h4>Gesture → Action mapping</h4>
+          <table class="data" id="gesture_table">
+            <thead><tr><th>Gesture</th><th>Action</th><th>Risk</th><th>Confirm</th><th>Min conf</th><th>Enabled</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <h4>Gesture timeline</h4>
+          <div id="gesture_timeline" class="logbox small"></div>
         </div>
 
         <div id="tab_permissions" class="tabpane">

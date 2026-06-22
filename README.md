@@ -1,13 +1,14 @@
-# TFNK Agent OS — V0.3 (Agent OS Foundation Build)
+# TFNK Agent OS — V0.4 (Cross-Device Vision Agent Build)
 
 > A **verifiable, controllable, repairable** computer-agent foundation.
 > Not a chatbot with decorative buttons. The iron rule of this codebase:
 >
 > **Every button → a registered action → a real API → a real test → a trace.**
 
-This is the Phase 1 / V0.3 foundation from the *TFNK Agent vNext+* blueprint. It
-is fully runnable today with **zero external dependencies** (Node ≥ 20 only — no
-`npm install` required) so it works in restricted/offline environments.
+This implements the *TFNK Agent vNext+* blueprint (Phases 1–3) plus the *V0.4
+Cross-Device Vision Agent* build. It is fully runnable today with **zero external
+dependencies** (Node ≥ 20 only — no `npm install` required) so it works in
+restricted/offline environments.
 
 ---
 
@@ -31,10 +32,37 @@ is fully runnable today with **zero external dependencies** (Node ≥ 20 only �
 | **Master Orchestrator** (autonomous run + Report Generator) | ✅ Phase 2 | `backend/agents/orchestrator.js` |
 | **Memory Center** (project knowledge) | ✅ Phase 2 | `backend/lib/memory.js` |
 | **Computer Use Agent** (in-app virtual screen) | ✅ Phase 3 | `backend/agents/computerUse.js` |
+| **Device layer** (identity + capabilities + peer registry) | ✅ V0.4 | `backend/lib/device.js` |
+| **LAN discovery** (UDP announce/listen) | ✅ V0.4 | `backend/lib/discovery.js` |
+| **Pairing + trust tokens** (6-digit code) | ✅ V0.4 | `backend/lib/device.js` |
+| **Cross Device Agent** (node select + real HTTP delegation) | ✅ V0.4 | `backend/agents/crossDevice.js` |
+| **Event bus** (SSE + ring buffer) | ✅ V0.4 | `backend/lib/events.js` |
+| **Camera Adapter Layer** (capability detection + replay) | ✅ V0.4 | `backend/agents/cameraAdapter.js` |
+| **Gesture mappings + Action Mapper** (safety-gated) | ✅ V0.4 | `backend/lib/gestures.js` |
+| **Vision Engine** (smoothing → cooldown → risk → permission → verify) | ✅ V0.4 | `backend/agents/vision.js` |
+| **Vision Control Center + Devices UI** | ✅ V0.4 | `frontend/` |
+| Live USB/RTSP/RTMP/HDMI capture + MediaPipe model | 🔌 pluggable (external worker via `/api/vision/ingest`) | honest capability detection |
 | Workflow Canvas | ⏳ Phase 4 (declared, disabled) | registry `implemented:false` |
 
 Future-phase controls are **honestly disabled** in the UI (greyed out, labelled
 `no backend`) instead of pretending to work.
+
+### V0.4 honesty boundary (zero-dependency, headless)
+
+This build has **no external dependencies**, so it cannot run MediaPipe or open a
+real camera/RTSP stream here — and the project's iron rule forbids faking. So:
+
+- **Gesture recognition runs in an external worker** (e.g. MediaPipe) that pushes
+  per-frame results to `POST /api/vision/ingest`. TFNK owns the **safety
+  pipeline** (temporal smoothing → confidence → cooldown → Action Registry →
+  risk/permission gate → execute → verify), which is fully real and tested.
+- **Live capture adapters** (USB/UVC, RTSP, RTMP, HDMI, phone relay) report
+  `available:false` with a reason and a test returns `connected:false` — they
+  never emit fake frames. The **`frames_jsonl` replay adapter is fully real** and
+  drives the pipeline from a file (see `data/samples/gestures_demo.jsonl`).
+- **Cross-device delegation is real** over HTTP between trusted peers (tested with
+  two live loopback instances). UDP discovery is best-effort; its packet
+  parse/register handlers are pure and tested.
 
 ---
 
@@ -42,7 +70,7 @@ Future-phase controls are **honestly disabled** in the UI (greyed out, labelled
 
 ```bash
 npm start            # serve UI + API on http://localhost:4007
-npm test             # run the real test suite (32 tests)
+npm test             # run the real test suite (46 tests)
 npm run audit        # run the UI Audit Agent from the CLI
 ```
 
@@ -70,8 +98,8 @@ The audit distinguishes three honest non-problems from genuine fakes:
 (`missing_action_id / missing_backend / missing_test / fake_or_unmapped /
 broken`) fail the audit and CI.
 
-Run `npm run audit` to see the live report. Current foundation:
-**17 connected, 9 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
+Run `npm run audit` to see the live report. Current build:
+**23 connected, 12 client-only, 1 declared-pending (Phase 4), 0 genuine problems.**
 
 ---
 
@@ -126,6 +154,22 @@ Hard rules baked into code:
 | GET | `/api/tests` | test coverage inventory |
 | POST | `/api/tests/run` | run the real test suite, return summary |
 
+### V0.4 — cross-device + vision
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/api/device/info` · `/api/device/capabilities` | this node's identity / capabilities |
+| GET | `/api/devices` | self + discovered peers |
+| POST | `/api/devices/discover` · `/api/devices/announce` | broadcast / register a peer |
+| POST | `/api/devices/pair` · `/api/devices/trust` | 6-digit pairing → trust token |
+| POST | `/api/devices/delegate-task` | delegate an action to a trusted peer (HTTP) |
+| GET | `/api/camera/sources` | adapter capabilities + sources |
+| POST | `/api/camera/source/add` · `/source/test` · `/start` | manage + test a camera source |
+| POST | `/api/vision/start` · `/stop` · `/ingest` · `/replay` | vision session + frame pipeline |
+| GET | `/api/vision/status` · `/gestures/latest` · `/events` | vision state + decisions |
+| GET | `/api/gestures` · POST `/api/gestures/map` `/test` `/enable` `/disable` | gesture→action mappings |
+| GET | `/api/events` (SSE) · `/api/events/recent` | live event stream |
+
 ---
 
 ## Architecture
@@ -147,13 +191,23 @@ backend/
     verifier.js        Verification Agent
     repair.js          Repair Agent (permission-gated)
     computerUse.js     Computer Use Agent (in-app virtual screen) [Phase 3]
+    crossDevice.js     Cross Device Agent — node select + delegation [V0.4]
+    cameraAdapter.js   Camera Adapter Layer (capability detection + replay) [V0.4]
+    vision.js          Vision Engine — gesture safety pipeline [V0.4]
     testCenter.js      runs the real test suite as a child process
+  lib/
+    device.js          device identity + peers + pairing/trust [V0.4]
+    discovery.js       UDP LAN discovery [V0.4]
+    events.js          event bus (SSE + ring buffer) [V0.4]
+    gestures.js        gesture mappings + Gesture Action Mapper [V0.4]
   cli/audit.js         `npm run audit`
 data/
   action_registry.json action source of truth
   ui_control_map.json  UI→action bindings
-frontend/              Agent Command Center (index.html / app.js / styles.css)
-test/                  api / agents / phase23 (.test.js) — 32 tests, all green
+  gesture_mappings.json gesture→action bindings [V0.4]
+  samples/             gestures_demo.jsonl replay fixture [V0.4]
+frontend/              Agent Command Center + Vision Control + Devices
+test/                  api / agents / phase23 / v04 (.test.js) — 46 tests, all green
 .github/workflows/     ci.yml — runs the suite + audit on Node 20 & 22
 ```
 
@@ -162,6 +216,7 @@ test/                  api / agents / phase23 (.test.js) — 32 tests, all green
 - **Phase 1** — ✅ Foundation: registry, audit, planner, verifier, repair, LOOP, tests.
 - **Phase 2** — ✅ Master Orchestrator (autonomous `agent.run` + Report Generator) and Memory Center.
 - **Phase 3** — ✅ Computer Use layer (screenshot / click / type / observe / verify), in-app virtual screen.
+- **V0.4** — ✅ Cross-device LAN collaboration (discovery / pairing / trust / delegation) + safe gesture control (camera adapters, gesture→action mapper, vision pipeline).
 - **Phase 4** — ⏳ Workflow Canvas (trigger / agent / tool / approval / retry nodes).
 - **Phase 5** — ⏳ Engineering agent (issue → branch → edit → test → PR → rollback).
 

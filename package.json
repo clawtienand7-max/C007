@@ -1,7 +1,7 @@
 {
   "name": "tfnk-agent-os",
-  "version": "0.3.0",
-  "description": "TFNK Agent OS — a verifiable, controllable, repairable computer-agent foundation. No fake UI: every button maps to a registered action, every action to a real API, every API to a test.",
+  "version": "0.4.0",
+  "description": "TFNK Agent OS — a verifiable, controllable, repairable computer-agent OS with cross-device LAN collaboration and safe gesture control. No fake UI: every button maps to a registered action, every action to a real API, every API to a test.",
   "type": "module",
   "main": "backend/server.js",
   "scripts": {

@@ -201,6 +201,72 @@
       "fallback": "show_error_and_disable_button"
     },
     {
+      "id": "devices.discover",
+      "label": "Discover TFNK Devices",
+      "ui_element": "btn_discover",
+      "api": "/api/devices/discover",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_devices_discover",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "devices.pair",
+      "label": "Pair Device",
+      "ui_element": "btn_pair",
+      "api": "/api/devices/pair",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_devices_pair",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "camera.start",
+      "label": "Start Camera Input",
+      "ui_element": "btn_camera_start",
+      "api": "/api/camera/start",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_camera_start",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "vision.start",
+      "label": "Start Vision Recognition",
+      "ui_element": "btn_vision_start",
+      "api": "/api/vision/start",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_vision_start",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "vision.stop",
+      "label": "Stop Vision Recognition",
+      "ui_element": "btn_vision_stop",
+      "api": "/api/vision/stop",
+      "method": "POST",
+      "risk": "low",
+      "implemented": true,
+      "test_id": "test_vision_stop",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
+      "id": "gesture.map_action",
+      "label": "Map Gesture to Action",
+      "ui_element": "btn_gesture_map",
+      "api": "/api/gestures/map",
+      "method": "POST",
+      "risk": "medium",
+      "implemented": true,
+      "test_id": "test_gesture_mapping",
+      "fallback": "show_error_and_disable_button"
+    },
+    {
       "id": "workflow.run",
       "label": "Run Workflow (Phase 4)",
       "ui_element": "btn_run_workflow",
